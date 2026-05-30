@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <!-- Main HDFS endpoint used by Spark, Hive Metastore, and Airflow. -->
+  <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://hdfs-namenode:9000</value>
+  </property>
+
+  <!-- Local temp directory inside Hadoop containers. -->
+  <property>
+    <name>hadoop.tmp.dir</name>
+    <value>/hadoop/tmp</value>
+  </property>
+
+  <!-- Local lab only: allow Spark/Airflow/Hive users to proxy without Kerberos. -->
+  <property>
+    <name>hadoop.proxyuser.spark.hosts</name>
+    <value>*</value>
+  </property>
+
+  <property>
+    <name>hadoop.proxyuser.spark.groups</name>
+    <value>*</value>
+  </property>
+
+  <property>
+    <name>hadoop.proxyuser.airflow.hosts</name>
+    <value>*</value>
+  </property>
+
+  <property>
+    <name>hadoop.proxyuser.airflow.groups</name>
+    <value>*</value>
+  </property>
+
+  <property>
+    <name>hadoop.proxyuser.hive.hosts</name>
+    <value>*</value>
+  </property>
+
+  <property>
+    <name>hadoop.proxyuser.hive.groups</name>
+    <value>*</value>
+  </property>
+
+  <!-- Avoid permission friction in the local lab. Do not copy this blindly to production. -->
+  <property>
+    <name>hadoop.http.staticuser.user</name>
+    <value>root</value>
+  </property>
+</configuration>

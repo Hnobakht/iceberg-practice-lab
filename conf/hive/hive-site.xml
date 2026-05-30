@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <!-- Remote Hive Metastore Thrift endpoint. Spark/Iceberg will use this. -->
+  <property>
+    <name>hive.metastore.uris</name>
+    <value>thrift://hive-metastore:9083</value>
+  </property>
+
+  <!-- Warehouse root for Hive-compatible metadata. Iceberg tables will live under here. -->
+  <property>
+    <name>hive.metastore.warehouse.dir</name>
+    <value>hdfs://hdfs-namenode:9000/warehouse/iceberg</value>
+  </property>
+
+  <!-- Hive Metastore service port. -->
+  <property>
+    <name>metastore.thrift.port</name>
+    <value>9083</value>
+  </property>
+
+  <property>
+    <name>metastore.thrift.bind.host</name>
+    <value>0.0.0.0</value>
+  </property>
+
+  <!-- Postgres backend for Hive Metastore metadata. -->
+  <property>
+    <name>javax.jdo.option.ConnectionURL</name>
+    <value>jdbc:postgresql://hms-postgres:5432/metastore_db</value>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionDriverName</name>
+    <value>org.postgresql.Driver</value>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionUserName</name>
+    <value>hive</value>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionPassword</name>
+    <value>hive</value>
+  </property>
+
+  <!-- Local Docker lab settings. -->
+  <property>
+    <name>hive.metastore.schema.verification</name>
+    <value>false</value>
+  </property>
+
+  <property>
+    <name>datanucleus.schema.autoCreateAll</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>datanucleus.autoCreateSchema</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>datanucleus.fixedDatastore</name>
+    <value>false</value>
+  </property>
+
+  <!-- Avoid authorization issues for a local lab. -->
+  <property>
+    <name>hive.metastore.event.db.notification.api.auth</name>
+    <value>false</value>
+  </property>
+
+  <!-- Scratch and temp dirs in HDFS. -->
+  <property>
+    <name>hive.exec.scratchdir</name>
+    <value>hdfs://hdfs-namenode:9000/tmp/hive</value>
+  </property>
+
+  <property>
+    <name>hive.downloaded.resources.dir</name>
+    <value>/tmp/hive/resources</value>
+  </property>
+</configuration>
