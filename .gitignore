@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# HDF file systems
+hdfs/
+.hdfs
+/hdfs
+hdfs

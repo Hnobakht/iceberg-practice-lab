@@ -29,8 +29,7 @@ x-airflow-common: &airflow-common
     - ./data:/opt/airflow/data
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
-    - ./conf/hadoop:/opt/airflow/conf/hadoop:ro
-    - ./conf/hive/hive-site.xml:/opt/airflow/conf/hadoop/hive-site.xml:ro
+    - ./conf/hadoop-client:/opt/airflow/conf/hadoop:ro
     - ./conf/spark:/opt/airflow/conf/spark:ro
     - ivy-cache:/home/airflow/.ivy2
   user: "${AIRFLOW_UID:-50000}:0"
@@ -52,23 +51,40 @@ services:
     container_name: hdfs-namenode
     hostname: hdfs-namenode
     restart: unless-stopped
+    user: "0:0"
     environment:
       HADOOP_CONF_DIR: /opt/hadoop/etc/hadoop
+      HADOOP_LOG_DIR: /tmp/hadoop-logs
+      HADOOP_PID_DIR: /tmp/hadoop-pids
     ports:
-      - "9870:9870"   # NameNode Web UI
-      - "9000:9000"   # HDFS RPC
+      - "9870:9870"
+      - "9000:9000"
     volumes:
-      - ./conf/hadoop:/opt/hadoop/etc/hadoop:ro
-      - hdfs-namenode-data:/hadoop/dfs/name
-    command: >
-      bash -c "
+      - ./conf/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./conf/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+      - ./hdfs/namenode:/hadoop/dfs/name
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+
+        echo "Preparing NameNode directories..."
+        mkdir -p /hadoop/dfs/name
+        mkdir -p /hadoop/tmp
+        mkdir -p /tmp/hadoop-logs
+        mkdir -p /tmp/hadoop-pids
+        chmod -R 777 /hadoop
+        chmod -R 777 /tmp/hadoop-logs
+        chmod -R 777 /tmp/hadoop-pids
+
         if [ ! -d /hadoop/dfs/name/current ]; then
-          echo 'Formatting HDFS NameNode...';
-          hdfs namenode -format -force -nonInteractive;
-        fi;
-        echo 'Starting HDFS NameNode...';
-        hdfs namenode
-      "
+          echo "Formatting HDFS NameNode..."
+          hdfs namenode -format -force -nonInteractive
+        fi
+
+        echo "Starting HDFS NameNode..."
+        exec hdfs namenode
     healthcheck:
       test: ["CMD-SHELL", "hdfs dfsadmin -fs hdfs://hdfs-namenode:9000 -report >/dev/null 2>&1 || exit 1"]
       interval: 10s
@@ -82,18 +98,34 @@ services:
     container_name: hdfs-datanode
     hostname: hdfs-datanode
     restart: unless-stopped
+    user: "0:0"
     environment:
       HADOOP_CONF_DIR: /opt/hadoop/etc/hadoop
+      HADOOP_LOG_DIR: /tmp/hadoop-logs
+      HADOOP_PID_DIR: /tmp/hadoop-pids
     ports:
-      - "9864:9864"   # DataNode Web UI
+      - "9864:9864"
     volumes:
-      - ./conf/hadoop:/opt/hadoop/etc/hadoop:ro
-      - hdfs-datanode-data:/hadoop/dfs/data
-    command: >
-      bash -c "
-        echo 'Starting HDFS DataNode...';
-        hdfs datanode
-      "
+      - ./conf/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./conf/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+      - ./hdfs/datanode:/hadoop/dfs/data
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+
+        echo "Preparing DataNode directories..."
+        mkdir -p /hadoop/dfs/data
+        mkdir -p /hadoop/tmp
+        mkdir -p /tmp/hadoop-logs
+        mkdir -p /tmp/hadoop-pids
+        chmod -R 777 /hadoop
+        chmod -R 777 /tmp/hadoop-logs
+        chmod -R 777 /tmp/hadoop-pids
+
+        echo "Starting HDFS DataNode..."
+        exec hdfs datanode
     depends_on:
       hdfs-namenode:
         condition: service_started
@@ -105,30 +137,38 @@ services:
     container_name: hdfs-init
     hostname: hdfs-init
     restart: "no"
+    user: "0:0"
     environment:
       HADOOP_CONF_DIR: /opt/hadoop/etc/hadoop
     volumes:
-      - ./conf/hadoop:/opt/hadoop/etc/hadoop:ro
-    command: >
-      bash -c "
-        echo 'Waiting for HDFS...';
-        for i in $$(seq 1 60); do
-          hdfs dfs -fs hdfs://hdfs-namenode:9000 -ls / >/dev/null 2>&1 && break;
-          sleep 2;
-        done;
+      - ./conf/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./conf/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+    command:
+      - bash
+      - -c
+      - |
+        set -e
 
-        echo 'Creating HDFS directories...';
-        hdfs dfs -fs hdfs://hdfs-namenode:9000 -mkdir -p /warehouse/iceberg;
-        hdfs dfs -fs hdfs://hdfs-namenode:9000 -mkdir -p /tmp/hive;
-        hdfs dfs -fs hdfs://hdfs-namenode:9000 -mkdir -p /user/spark;
-        hdfs dfs -fs hdfs://hdfs-namenode:9000 -mkdir -p /user/airflow;
+        echo "Waiting for HDFS..."
+        for i in $(seq 1 60); do
+          if hdfs dfs -fs hdfs://hdfs-namenode:9000 -ls / >/dev/null 2>&1; then
+            echo "HDFS is ready."
+            break
+          fi
+          echo "Still waiting for HDFS..."
+          sleep 2
+        done
 
-        hdfs dfs -fs hdfs://hdfs-namenode:9000 -chmod -R 777 /warehouse;
-        hdfs dfs -fs hdfs://hdfs-namenode:9000 -chmod -R 777 /tmp;
-        hdfs dfs -fs hdfs://hdfs-namenode:9000 -chmod -R 777 /user;
+        hdfs dfs -fs hdfs://hdfs-namenode:9000 -mkdir -p /warehouse/iceberg
+        hdfs dfs -fs hdfs://hdfs-namenode:9000 -mkdir -p /tmp/hive
+        hdfs dfs -fs hdfs://hdfs-namenode:9000 -mkdir -p /user/spark
+        hdfs dfs -fs hdfs://hdfs-namenode:9000 -mkdir -p /user/airflow
 
-        echo 'HDFS init complete.';
-      "
+        hdfs dfs -fs hdfs://hdfs-namenode:9000 -chmod -R 777 /warehouse
+        hdfs dfs -fs hdfs://hdfs-namenode:9000 -chmod -R 777 /tmp
+        hdfs dfs -fs hdfs://hdfs-namenode:9000 -chmod -R 777 /user
+
+        echo "HDFS init complete."
     depends_on:
       hdfs-namenode:
         condition: service_started
@@ -169,18 +209,22 @@ services:
     user: "0:0"
     volumes:
       - ./jars:/jars
-    command: >
-      sh -c "
-        mkdir -p /jars;
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        mkdir -p /jars
+
         if [ ! -f /jars/postgresql-42.7.3.jar ]; then
-          echo 'Downloading PostgreSQL JDBC driver...';
-          curl -fL
-            -o /jars/postgresql-42.7.3.jar
-            https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.3/postgresql-42.7.3.jar;
+          echo "Downloading PostgreSQL JDBC driver..."
+          curl -fL "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.3/postgresql-42.7.3.jar" -o "/jars/postgresql-42.7.3.jar"
+          echo "Downloaded PostgreSQL JDBC driver."
         else
-          echo 'PostgreSQL JDBC driver already exists.';
+          echo "PostgreSQL JDBC driver already exists."
         fi
-      "
+
+        ls -lh /jars/postgresql-42.7.3.jar
     networks:
       - bigdata
 
@@ -244,8 +288,7 @@ services:
       - "4040:4040"   # Spark driver UI, useful for client-mode tests
     volumes:
       - ./conf/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
-      - ./conf/hadoop:/opt/hadoop/etc/hadoop:ro
-      - ./conf/hive/hive-site.xml:/opt/hadoop/etc/hadoop/hive-site.xml:ro
+      - ./conf/hadoop-client:/opt/hadoop/etc/hadoop:ro
       - ./jobs:/opt/spark/jobs
       - ./data:/opt/spark/data
       - ivy-cache:/root/.ivy2
@@ -274,8 +317,7 @@ services:
       - "8081:8081"   # Spark Worker UI
     volumes:
       - ./conf/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
-      - ./conf/hadoop:/opt/hadoop/etc/hadoop:ro
-      - ./conf/hive/hive-site.xml:/opt/hadoop/etc/hadoop/hive-site.xml:ro
+      - ./conf/hadoop-client:/opt/hadoop/etc/hadoop:ro
       - ./jobs:/opt/spark/jobs
       - ./data:/opt/spark/data
       - ivy-cache:/root/.ivy2
@@ -386,8 +428,6 @@ networks:
     name: bigdata-local-net
 
 volumes:
-  hdfs-namenode-data:
-  hdfs-datanode-data:
   hms-postgres-data:
   airflow-postgres-data:
   ivy-cache:

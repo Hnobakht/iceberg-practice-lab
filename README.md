@@ -5,6 +5,11 @@
 
 From bigdata-local/:
 ```
+
+$ mkdir -p hdfs/namenode
+$ mkdir -p hdfs/datanode
+$chmod -R 777 hdfs
+
 $ export AIRFLOW_UID=$(id -u)
 $ docker compose up -d
 ```

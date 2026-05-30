@@ -18,6 +18,12 @@
     <value>file:///hadoop/dfs/data</value>
   </property>
 
+
+  <property>
+    <name>dfs.datanode.data.dir.perm</name>
+    <value>777</value>
+  </property>
+
   <!-- Bind NameNode RPC to all container interfaces. -->
   <property>
     <name>dfs.namenode.rpc-bind-host</name>
