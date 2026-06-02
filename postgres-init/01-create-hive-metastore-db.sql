@@ -1,0 +1,7 @@
+CREATE USER hive WITH PASSWORD 'hive';
+
+CREATE DATABASE metastore_db
+  OWNER hive
+  ENCODING 'UTF8';
+
+GRANT ALL PRIVILEGES ON DATABASE metastore_db TO hive;

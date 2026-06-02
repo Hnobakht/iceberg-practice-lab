@@ -3,32 +3,51 @@
 
 ## 1. Start it
 
-From bigdata-local/:
+1. From bigdata-local/:
+```
+docker compose up -d postgres redis
+docker compose exec postgres psql -U airflow -d airflow -c "\l"
+```
+You should see: `airflow, metastore_db`
+
+2. Start HDFS
+```
+docker compose up -d hdfs-namenode hdfs-datanode hdfs-init
+docker compose logs -f hdfs-init
 ```
 
-$ mkdir -p hdfs/namenode
-$ mkdir -p hdfs/datanode
-$chmod -R 777 hdfs
+3. Start Hive Metastore:
+```
+docker compose up -d postgres-driver-downloader hive-metastore
+docker compose logs -f hive-metastore
+```
 
-$ export AIRFLOW_UID=$(id -u)
-$ docker compose up -d
+4. Start Spark:
 ```
-Check containers:
+docker compose up -d spark-master spark-worker
 ```
-docker compose ps
+
+5. Start Airflow
 ```
-Open these:
-```
-HDFS NameNode UI:    http://localhost:9870
-Spark Master UI:    http://localhost:8080
-Spark Worker UI:    http://localhost:8081
-Airflow UI:         http://localhost:8088
-Hive Metastore:     thrift://localhost:9083
+docker compose up -d airflow-init
+docker compose logs -f airflow-init
+
+docker compose up -d airflow-apiserver airflow-scheduler airflow-dag-processor airflow-worker airflow-triggerer
 ```
 Airflow login:
+username: `airflow`
+password: `airflow`
+
+6. Open these URLS:
 ```
-username: airflow
-password: airflow
+Airflow API/UI:    http://localhost:8080
+Spark Master UI:   http://localhost:8081
+Spark Worker UI:   http://localhost:8082
+HDFS NameNode UI:  http://localhost:9870
+Hive Metastore:    thrift://localhost:9083
+Postgres:          localhost:5432
+```
+
 ```
 ## 2. Basic health checks
 

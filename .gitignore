@@ -222,3 +222,6 @@ hdfs/
 .hdfs
 /hdfs
 hdfs
+
+# Development Drafts
+.back
