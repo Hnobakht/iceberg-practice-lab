@@ -227,6 +227,9 @@ services:
           sleep 2
         done
 
+        echo "Waiting for HDFS to leave safe mode..."
+        hdfs dfsadmin -fs hdfs://hdfs-namenode:9000 -safemode wait
+
         hdfs dfs -fs hdfs://hdfs-namenode:9000 -mkdir -p /warehouse/iceberg
         hdfs dfs -fs hdfs://hdfs-namenode:9000 -mkdir -p /tmp/hive
         hdfs dfs -fs hdfs://hdfs-namenode:9000 -mkdir -p /user/spark
