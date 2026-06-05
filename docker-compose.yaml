@@ -2,10 +2,11 @@ name: bigdata-local
 
 x-airflow-common:
   &airflow-common
-  image: ${AIRFLOW_IMAGE_NAME:-bigdata-airflow:3.2.2-spark}
+  image: ${AIRFLOW_IMAGE_NAME:-bigdata-airflow:3.2.2-spark-kubctl}
   build:
     context: ./docker/airflow
     dockerfile: Dockerfile
+    target: final
   env_file:
     - ${ENV_FILE_PATH:-.env}
   environment:
@@ -320,7 +321,7 @@ services:
   # ---------------------------------------------------------------------------
 
   spark-master:
-    image: spark:3.5.3-scala2.12-java17-python3-ubuntu
+    image: spark:3.5.8-scala2.12-java17-python3-ubuntu
     container_name: spark-master
     hostname: spark-master
     restart: unless-stopped
@@ -359,7 +360,7 @@ services:
       - bigdata
 
   spark-worker:
-    image: spark:3.5.3-scala2.12-java17-python3-ubuntu
+    image: spark:3.5.8-scala2.12-java17-python3-ubuntu
     container_name: spark-worker
     hostname: spark-worker
     restart: unless-stopped

@@ -16,7 +16,7 @@ dag = DAG(
     'spark_submit_k8s_example',
     default_args=default_args,
     description='Spark submit on K8s example with Iceberg and HDFS',
-    schedule_interval=None,
+    # schedule_interval=None,
     catchup=False,
 )
 
