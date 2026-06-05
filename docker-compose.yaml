@@ -49,8 +49,8 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
-    - ${AIRFLOW_PROJ_DIR:-.}/jobs:/opt/spark/jobs
-    - ${AIRFLOW_PROJ_DIR:-.}/data:/opt/spark/data
+    - ${AIRFLOW_PROJ_DIR:-.}/jobs:/opt/airflow/jobs
+    - ${AIRFLOW_PROJ_DIR:-.}/data:/opt/airflow/data
     - ${AIRFLOW_PROJ_DIR:-.}/conf/hadoop-client:/opt/airflow/conf/hadoop:ro
     - ${AIRFLOW_PROJ_DIR:-.}/conf/spark:/opt/airflow/conf/spark:ro
     - ivy-cache:/home/airflow/.ivy2
@@ -320,7 +320,7 @@ services:
   # ---------------------------------------------------------------------------
 
   spark-master:
-    image: apache/spark:3.5.3
+    image: spark:3.5.8-scala2.12-java17-python3-ubuntu
     container_name: spark-master
     hostname: spark-master
     restart: unless-stopped
@@ -357,7 +357,7 @@ services:
       - bigdata
 
   spark-worker:
-    image: apache/spark:3.5.3
+    image: spark:3.5.8-scala2.12-java17-python3-ubuntu
     container_name: spark-worker
     hostname: spark-worker
     restart: unless-stopped
@@ -646,15 +646,6 @@ services:
         echo "Applying K8s manifests..."
         kubectl apply -f /k8s/spark-rbac.yaml
         kubectl apply -f /k8s/external-services.yaml
-
-        echo "Updating CoreDNS configuration..."
-        # In K3s, we can use the 'coredns-custom' ConfigMap, but we need to ensure it's picked up.
-        # Alternatively, we can patch the main coredns configmap.
-        kubectl apply -f /k8s/coredns-custom.yaml
-        # Restart coredns to pick up the change if necessary,
-        # though K3s coredns is configured to read from coredns-custom if it exists in some setups.
-        # To be safe, we'll use a more direct approach if this doesn't work, but this is a good start.
-        kubectl rollout restart deployment coredns -n kube-system
 
         echo "K3s initialization complete."
 
