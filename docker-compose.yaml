@@ -2,10 +2,11 @@ name: bigdata-local
 
 x-airflow-common:
   &airflow-common
-  image: ${AIRFLOW_IMAGE_NAME:-bigdata-airflow:3.2.2-spark}
+  image: ${AIRFLOW_IMAGE_NAME:-bigdata-airflow:3.2.2-spark-kubctl}
   build:
     context: ./docker/airflow
     dockerfile: Dockerfile
+    target: final
   env_file:
     - ${ENV_FILE_PATH:-.env}
   environment:
@@ -37,11 +38,11 @@ x-airflow-common:
 
     AIRFLOW_CONFIG: "/opt/airflow/config/airflow.cfg"
 
-    # Airflow 3.2.2 image currently uses Python 3.13.
+    # Airflow 3.2.2 image currently uses Python 3.11.
     SPARK_HOME: /home/airflow/.local/lib/python3.11/site-packages/pyspark
     HADOOP_CONF_DIR: /opt/airflow/conf/hadoop
     SPARK_CONF_DIR: /opt/airflow/conf/spark
-    PATH: /home/airflow/.local/bin:/home/airflow/.local/lib/python3.11/site-packages/pyspark/bin:/usr/local/bin:/usr/bin:/bin
+    PATH: /usr/local/bin:/home/airflow/.local/bin:/home/airflow/.local/lib/python3.11/site-packages/pyspark/bin:/usr/bin:/bin
     KUBECONFIG: /opt/airflow/conf/kubeconfig/k3s.yaml
 
   volumes:
@@ -324,10 +325,12 @@ services:
     container_name: spark-master
     hostname: spark-master
     restart: unless-stopped
+    user: "spark"
     environment:
       SPARK_CONF_DIR: /opt/spark/conf
       HADOOP_CONF_DIR: /opt/hadoop/etc/hadoop
       SPARK_NO_DAEMONIZE: "true"
+      HOME: /opt/spark
     ports:
       - "8081:8080"
       - "7077:7077"
@@ -337,7 +340,7 @@ services:
       - ./conf/hadoop-client:/opt/hadoop/etc/hadoop:ro
       - ./jobs:/opt/spark/jobs
       - ./data:/opt/spark/data
-      - ivy-cache:/root/.ivy2
+      - ivy-cache:/opt/spark/.ivy2
     command: >
       /opt/spark/bin/spark-class
       org.apache.spark.deploy.master.Master
@@ -361,10 +364,12 @@ services:
     container_name: spark-worker
     hostname: spark-worker
     restart: unless-stopped
+    user: "spark"
     environment:
       SPARK_CONF_DIR: /opt/spark/conf
       HADOOP_CONF_DIR: /opt/hadoop/etc/hadoop
       SPARK_NO_DAEMONIZE: "true"
+      HOME: /opt/spark
     ports:
       - "8082:8081"
     volumes:
@@ -372,7 +377,7 @@ services:
       - ./conf/hadoop-client:/opt/hadoop/etc/hadoop:ro
       - ./jobs:/opt/spark/jobs
       - ./data:/opt/spark/data
-      - ivy-cache:/root/.ivy2
+      - ivy-cache:/opt/spark/.ivy2
     command: >
       /opt/spark/bin/spark-class
       org.apache.spark.deploy.worker.Worker

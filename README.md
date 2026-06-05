@@ -5,6 +5,11 @@ This repository provides a local infrastructure to develop and practice ETL on a
 
 ## 1. Start it
 
+0. Build the base airflow image
+```bash
+docker build --target base -t bigdata-airflow:3.2.2-spark .
+```
+
 1. From the project root:
 ```bash
 docker compose up -d postgres redis
