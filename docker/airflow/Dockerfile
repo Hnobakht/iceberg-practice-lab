@@ -28,7 +28,7 @@ USER airflow
 RUN pip install --no-cache-dir \
     --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt" \
     apache-airflow-providers-apache-spark \
-    pyspark==3.5.8
+    pyspark==3.5.3
 
 # PySpark installed by pip contains spark-submit under this package path.
 ENV SPARK_HOME=/home/airflow/.local/lib/python3.11/site-packages/pyspark
