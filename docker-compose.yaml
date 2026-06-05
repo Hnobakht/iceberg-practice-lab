@@ -54,7 +54,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/data:/opt/airflow/data
     - ${AIRFLOW_PROJ_DIR:-.}/conf/hadoop-client:/opt/airflow/conf/hadoop:ro
     - ${AIRFLOW_PROJ_DIR:-.}/conf/spark:/opt/airflow/conf/spark:ro
-    - ivy-cache:/home/airflow/.ivy2
+    # - ivy-cache:/home/airflow/.ivy2
     - kubeconfig:/opt/airflow/conf/kubeconfig:ro
 
   user: "${AIRFLOW_UID:-50000}:0"
@@ -340,7 +340,7 @@ services:
       - ./conf/hadoop-client:/opt/hadoop/etc/hadoop:ro
       - ./jobs:/opt/spark/jobs
       - ./data:/opt/spark/data
-      - ivy-cache:/opt/spark/.ivy2
+      # - ivy-cache:/opt/spark/.ivy2
     command: >
       /opt/spark/bin/spark-class
       org.apache.spark.deploy.master.Master
@@ -350,8 +350,10 @@ services:
     depends_on:
       hive-metastore:
         condition: service_started
+      hdfs-init:
+        condition: service_completed_successfully
     healthcheck:
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/7077' >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8080' >/dev/null 2>&1 || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 40
@@ -377,7 +379,7 @@ services:
       - ./conf/hadoop-client:/opt/hadoop/etc/hadoop:ro
       - ./jobs:/opt/spark/jobs
       - ./data:/opt/spark/data
-      - ivy-cache:/opt/spark/.ivy2
+      # - ivy-cache:/opt/spark/.ivy2
     command: >
       /opt/spark/bin/spark-class
       org.apache.spark.deploy.worker.Worker
@@ -660,6 +662,6 @@ networks:
 
 volumes:
   postgres-db-volume:
-  ivy-cache:
+  # ivy-cache:
   k3s-data:
   kubeconfig:

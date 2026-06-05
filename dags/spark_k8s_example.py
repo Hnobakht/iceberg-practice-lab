@@ -8,15 +8,12 @@ default_args = {
     'start_date': datetime(2025, 1, 1),
     'email_on_failure': False,
     'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
 }
 
 dag = DAG(
     'spark_submit_k8s_example',
     default_args=default_args,
     description='Spark submit on K8s example with Iceberg and HDFS',
-    # schedule_interval=None,
     catchup=False,
 )
 
@@ -43,7 +40,7 @@ spark_k8s_conf = {
     'spark.sql.catalog.hms.uri': 'thrift://hive-metastore:9083',
     'spark.sql.catalog.hms.warehouse': 'hdfs://hdfs-namenode:9000/warehouse/iceberg',
     'spark.sql.extensions': 'org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions',
-    'spark.jars.packages': 'org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.11.0',
+    'spark.jars.packages': 'org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.6.1',
 }
 
 submit_job = SparkSubmitOperator(
