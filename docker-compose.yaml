@@ -52,6 +52,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ${AIRFLOW_PROJ_DIR:-.}/jobs:/opt/airflow/jobs
     - ${AIRFLOW_PROJ_DIR:-.}/data:/opt/airflow/data
+    - ${AIRFLOW_PROJ_DIR:-.}/jars:/opt/spark/extra-jars
     - ${AIRFLOW_PROJ_DIR:-.}/conf/hadoop-client:/opt/airflow/conf/hadoop:ro
     - ${AIRFLOW_PROJ_DIR:-.}/conf/spark:/opt/airflow/conf/spark:ro
     # - ivy-cache:/home/airflow/.ivy2
@@ -340,6 +341,7 @@ services:
       - ./conf/hadoop-client:/opt/hadoop/etc/hadoop:ro
       - ./jobs:/opt/spark/jobs
       - ./data:/opt/spark/data
+      - ./jars:/opt/spark/extra-jars
       # - ivy-cache:/opt/spark/.ivy2
     command: >
       /opt/spark/bin/spark-class
@@ -379,6 +381,7 @@ services:
       - ./conf/hadoop-client:/opt/hadoop/etc/hadoop:ro
       - ./jobs:/opt/spark/jobs
       - ./data:/opt/spark/data
+      - ./jars:/opt/spark/extra-jars
       # - ivy-cache:/opt/spark/.ivy2
     command: >
       /opt/spark/bin/spark-class
@@ -617,6 +620,7 @@ services:
       - kubeconfig:/etc/rancher/k3s
       - ./jobs:/opt/spark/jobs
       - ./data:/opt/spark/data
+      - ./jars:/opt/spark/extra-jars
     ports:
       - "6443:6443"
     healthcheck:
