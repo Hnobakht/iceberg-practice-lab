@@ -54,7 +54,8 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/data:/opt/airflow/data
     - ${AIRFLOW_PROJ_DIR:-.}/conf/hadoop-client:/opt/airflow/conf/hadoop:ro
     - ${AIRFLOW_PROJ_DIR:-.}/conf/spark:/opt/airflow/conf/spark:ro
-    # - ivy-cache:/home/airflow/.ivy2
+    - ${AIRFLOW_PROJ_DIR:-.}/jars:/opt/spark/extra-jars:ro
+    - ivy-cache:/opt/spark/.ivy2
     - kubeconfig:/opt/airflow/conf/kubeconfig:ro
 
   user: "${AIRFLOW_UID:-50000}:0"
@@ -336,11 +337,12 @@ services:
       - "7077:7077"
       - "4040:4040"
     volumes:
-      - ./conf/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
-      - ./conf/hadoop-client:/opt/hadoop/etc/hadoop:ro
-      - ./jobs:/opt/spark/jobs
-      - ./data:/opt/spark/data
-      # - ivy-cache:/opt/spark/.ivy2
+      - ${AIRFLOW_PROJ_DIR:-.}/conf/spark:/opt/spark/conf:ro
+      - ${AIRFLOW_PROJ_DIR:-.}/conf/hadoop-client:/opt/hadoop/etc/hadoop:ro
+      - ${AIRFLOW_PROJ_DIR:-.}/jobs:/opt/spark/jobs
+      - ${AIRFLOW_PROJ_DIR:-.}/data:/opt/spark/data
+      - ${AIRFLOW_PROJ_DIR:-.}/jars:/opt/spark/extra-jars:ro
+      - ivy-cache:/opt/spark/.ivy2
     command: >
       /opt/spark/bin/spark-class
       org.apache.spark.deploy.master.Master
@@ -375,11 +377,12 @@ services:
     ports:
       - "8082:8081"
     volumes:
-      - ./conf/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
-      - ./conf/hadoop-client:/opt/hadoop/etc/hadoop:ro
-      - ./jobs:/opt/spark/jobs
-      - ./data:/opt/spark/data
-      # - ivy-cache:/opt/spark/.ivy2
+      - ${AIRFLOW_PROJ_DIR:-.}/conf/spark:/opt/spark/conf:ro
+      - ${AIRFLOW_PROJ_DIR:-.}/conf/hadoop-client:/opt/hadoop/etc/hadoop:ro
+      - ${AIRFLOW_PROJ_DIR:-.}/jobs:/opt/spark/jobs
+      - ${AIRFLOW_PROJ_DIR:-.}/data:/opt/spark/data
+      - ${AIRFLOW_PROJ_DIR:-.}/jars:/opt/spark/extra-jars:ro
+      - ivy-cache:/opt/spark/.ivy2
     command: >
       /opt/spark/bin/spark-class
       org.apache.spark.deploy.worker.Worker
@@ -500,6 +503,15 @@ services:
     <<: *airflow-common
     container_name: airflow-init
     entrypoint: /bin/bash
+    user: "0:0"
+    volumes:
+      - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
+      - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
+      - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
+      - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+      - ${AIRFLOW_PROJ_DIR:-.}/jobs:/opt/airflow/jobs
+      - ${AIRFLOW_PROJ_DIR:-.}/data:/opt/airflow/data
+      - ivy-cache:/opt/spark/.ivy2
     command:
       - -c
       - |
@@ -552,6 +564,11 @@ services:
         echo
         echo "Changing ownership of shared volumes to ${AIRFLOW_UID}:0"
         chown -v -R "${AIRFLOW_UID}:0" /opt/airflow/{logs,dags,plugins,config,jobs,data}
+
+        echo
+        echo "Fixing ivy-cache permissions..."
+        mkdir -p /opt/spark/.ivy2
+        chmod -R 777 /opt/spark/.ivy2
 
         echo
         echo "Airflow init complete."
@@ -662,6 +679,6 @@ networks:
 
 volumes:
   postgres-db-volume:
-  # ivy-cache:
+  ivy-cache:
   k3s-data:
   kubeconfig:
