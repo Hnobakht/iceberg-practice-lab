@@ -33,6 +33,14 @@ spark_k8s_conf = {
     'spark.kubernetes.executor.volumes.hostPath.jobs.options.path': '/opt/spark/jobs',
     'spark.kubernetes.executor.volumes.hostPath.jobs.mount.readOnly': 'true',
 
+    # Mount extra-jars to Spark pods on K8s
+    'spark.kubernetes.driver.volumes.hostPath.jars.mount.path': '/opt/spark/extra-jars',
+    'spark.kubernetes.driver.volumes.hostPath.jars.options.path': '/opt/spark/extra-jars',
+    'spark.kubernetes.driver.volumes.hostPath.jars.mount.readOnly': 'true',
+    'spark.kubernetes.executor.volumes.hostPath.jars.mount.path': '/opt/spark/extra-jars',
+    'spark.kubernetes.executor.volumes.hostPath.jars.options.path': '/opt/spark/extra-jars',
+    'spark.kubernetes.executor.volumes.hostPath.jars.mount.readOnly': 'true',
+
     # Networking and Big Data stack integration
     'spark.hadoop.fs.defaultFS': 'hdfs://hdfs-namenode:9000',
     'spark.sql.catalog.hms': 'org.apache.iceberg.spark.SparkCatalog',
@@ -40,7 +48,7 @@ spark_k8s_conf = {
     'spark.sql.catalog.hms.uri': 'thrift://hive-metastore:9083',
     'spark.sql.catalog.hms.warehouse': 'hdfs://hdfs-namenode:9000/warehouse/iceberg',
     'spark.sql.extensions': 'org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions',
-    'spark.jars.packages': 'org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.6.1',
+    'spark.jars': '/opt/spark/extra-jars/iceberg-spark-runtime-3.5_2.12-1.6.1.jar',
 }
 
 submit_job = SparkSubmitOperator(
