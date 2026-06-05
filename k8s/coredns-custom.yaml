@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+data:
+  docker.override: |
+    # Bridge to Docker network DNS
+    .:53 {
+        forward . 127.0.0.11
+    }

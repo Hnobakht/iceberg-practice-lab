@@ -12,6 +12,10 @@ RUN apt-get update \
         openjdk-17-jre-headless \
         procps \
         curl \
+    && arch=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') \
+    && curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${arch}/kubectl" \
+    && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl \
+    && rm kubectl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -24,7 +28,7 @@ USER airflow
 RUN pip install --no-cache-dir \
     --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt" \
     apache-airflow-providers-apache-spark \
-    pyspark==3.5.8
+    pyspark==3.5.3
 
 # PySpark installed by pip contains spark-submit under this package path.
 ENV SPARK_HOME=/home/airflow/.local/lib/python3.11/site-packages/pyspark
