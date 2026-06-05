@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hdfs-namenode
+spec:
+  type: ExternalName
+  externalName: hdfs-namenode.
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hive-metastore
+spec:
+  type: ExternalName
+  externalName: hive-metastore.
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  type: ExternalName
+  externalName: postgres.

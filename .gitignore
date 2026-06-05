@@ -218,10 +218,9 @@ __marimo__/
 .streamlit/secrets.toml
 
 # HDF file systems
-hdfs/
-.hdfs
-/hdfs
-hdfs
+hdfs/datanode/*
+hdfs/namenode/*
 
 # Development Drafts
 .back
+logs/*

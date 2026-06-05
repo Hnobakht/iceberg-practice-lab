@@ -17,6 +17,8 @@ x-airflow-common:
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
     AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
 
+    AIRFLOW_CONN_SPARK_K8S: '{"conn_type": "spark", "host": "k8s://https://k3s:6443", "extra": {"deploy-mode": "cluster"}}'
+
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ${FERNET_KEY:-}
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
@@ -40,6 +42,7 @@ x-airflow-common:
     HADOOP_CONF_DIR: /opt/airflow/conf/hadoop
     SPARK_CONF_DIR: /opt/airflow/conf/spark
     PATH: /home/airflow/.local/bin:/home/airflow/.local/lib/python3.11/site-packages/pyspark/bin:/usr/local/bin:/usr/bin:/bin
+    KUBECONFIG: /opt/airflow/conf/kubeconfig/k3s.yaml
 
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
@@ -51,6 +54,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/conf/hadoop-client:/opt/airflow/conf/hadoop:ro
     - ${AIRFLOW_PROJ_DIR:-.}/conf/spark:/opt/airflow/conf/spark:ro
     - ivy-cache:/home/airflow/.ivy2
+    - kubeconfig:/opt/airflow/conf/kubeconfig:ro
 
   user: "${AIRFLOW_UID:-50000}:0"
 
@@ -588,6 +592,63 @@ services:
       airflow-init:
         condition: service_completed_successfully
 
+  # ---------------------------------------------------------------------------
+  # K3s cluster for Spark on K8s
+  # ---------------------------------------------------------------------------
+
+  k3s:
+    image: rancher/k3s:v1.31.2-k3s1
+    container_name: k3s
+    privileged: true
+    networks:
+      - bigdata
+    command: server --disable=traefik --disable=servicelb --tls-san=k3s
+    environment:
+      - K3S_KUBECONFIG_MODE=644
+    volumes:
+      - k3s-data:/var/lib/rancher/k3s
+      - kubeconfig:/etc/rancher/k3s
+      - ./jobs:/opt/spark/jobs
+      - ./data:/opt/spark/data
+    ports:
+      - "6443:6443"
+    healthcheck:
+      test: ["CMD-SHELL", "kubectl get nodes >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 40
+      start_period: 60s
+
+  k3s-init:
+    image: rancher/k3s:v1.31.2-k3s1
+    container_name: k3s-init
+    networks:
+      - bigdata
+    volumes:
+      - kubeconfig:/etc/rancher/k3s
+      - ./k8s:/k8s
+    depends_on:
+      k3s:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Preparing kubeconfig..."
+        # Wait for k3s to generate the file
+        until [ -f /etc/rancher/k3s/k3s.yaml ]; do sleep 2; done
+
+        # Replace 127.0.0.1 with k3s host for both this container and Airflow
+        sed -i 's/127.0.0.1/k3s/g' /etc/rancher/k3s/k3s.yaml
+
+        echo "Waiting for K3s to be ready..."
+        until kubectl get nodes; do sleep 2; done
+
+        echo "Applying K8s manifests..."
+        kubectl apply -f /k8s/spark-rbac.yaml
+        kubectl apply -f /k8s/external-services.yaml
+
+        echo "K3s initialization complete."
+
 networks:
   bigdata:
     name: bigdata-local-net
@@ -595,3 +656,5 @@ networks:
 volumes:
   postgres-db-volume:
   ivy-cache:
+  k3s-data:
+  kubeconfig:
