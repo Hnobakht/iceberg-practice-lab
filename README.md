@@ -1,34 +1,42 @@
-# Iceberg Practice Lab (under development)
+# Iceberg Practice Lab
 --------------------------------------------
+
+This repository provides a local infrastructure to develop and practice ETL on a Big Data stack including HDFS, Hive Metastore, Iceberg, Spark, and Airflow. It also includes a K3s Kubernetes cluster to simulate Spark-on-Kubernetes deployments.
 
 ## 1. Start it
 
-1. From bigdata-local/:
-```
+1. From the project root:
+```bash
 docker compose up -d postgres redis
 docker compose exec postgres psql -U airflow -d airflow -c "\l"
 ```
 You should see: `airflow, metastore_db`
 
-2. Start HDFS
-```
+2. Start HDFS:
+```bash
 docker compose up -d hdfs-namenode hdfs-datanode hdfs-init
 docker compose logs -f hdfs-init
 ```
 
 3. Start Hive Metastore:
-```
+```bash
 docker compose up -d postgres-driver-downloader hive-metastore
 docker compose logs -f hive-metastore
 ```
 
-4. Start Spark:
-```
+4. Start Spark (Standalone Cluster):
+```bash
 docker compose up -d spark-master spark-worker
 ```
 
-5. Start Airflow
+5. Start Kubernetes (K3s):
+```bash
+docker compose up -d k3s k3s-init
+docker compose logs -f k3s-init
 ```
+
+6. Start Airflow:
+```bash
 docker compose up -d airflow-init
 docker compose logs -f airflow-init
 
@@ -38,46 +46,34 @@ Airflow login:
 username: `airflow`
 password: `airflow`
 
-6. Open these URLS:
-```
-Airflow API/UI:    http://localhost:8080
-Spark Master UI:   http://localhost:8081
-Spark Worker UI:   http://localhost:8082
-HDFS NameNode UI:  http://localhost:9870
-Hive Metastore:    thrift://localhost:9083
-Postgres:          localhost:5432
-```
+7. Open these URLs:
+- **Airflow UI:** http://localhost:8080
+- **Spark Master UI:** http://localhost:8081
+- **Spark Worker UI:** http://localhost:8082
+- **HDFS NameNode UI:** http://localhost:9870
 
-```
 ## 2. Basic health checks
 
 Check HDFS:
+```bash
+docker compose exec hdfs-namenode hdfs dfs -ls /
 ```
-$ docker compose exec hdfs-namenode hdfs dfs -ls /
-```
-You should see something like:
-```
-/warehouse
-/tmp
-/user
-```
-Check Hive Metastore port:
-```
+
+Check Hive Metastore:
+```bash
 docker compose exec hive-metastore bash -c '</dev/tcp/localhost/9083' && echo OK
 ```
-Check Spark master:
-```
-$ docker compose exec spark-master /opt/spark/bin/spark-submit --version
-```
-Check Spark can see HDFS config:
-```
-$ docker compose exec spark-master hdfs dfs -ls hdfs://hdfs-namenode:9000/
-```
-## 3. Very small Iceberg smoke test
 
-Run this from the Spark master container:
+Check K3s Cluster (from Airflow container):
+```bash
+docker compose exec airflow-scheduler kubectl get nodes
 ```
-$ docker compose exec spark-master /opt/spark/bin/spark-sql \
+
+## 3. Spark Standalone Smoke Test (Iceberg)
+
+Run this from the Spark master container to verify Iceberg + Hive Metastore + HDFS:
+```bash
+docker compose exec spark-master /opt/spark/bin/spark-sql \
     --conf spark.sql.catalog.hms=org.apache.iceberg.spark.SparkCatalog \
     --conf spark.sql.catalog.hms.type=hive \
     --conf spark.sql.catalog.hms.uri=thrift://hive-metastore:9083 \
@@ -85,24 +81,40 @@ $ docker compose exec spark-master /opt/spark/bin/spark-sql \
     --conf spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions \
     -e "
         CREATE NAMESPACE IF NOT EXISTS hms.lab;
-
-        CREATE TABLE IF NOT EXISTS hms.lab.test_orders (
-        order_id BIGINT,
-        customer_id BIGINT,
-        amount DOUBLE,
-        order_date DATE
-        )
-        USING iceberg;
-
-        INSERT INTO hms.lab.test_orders VALUES
-        (1, 101, 25.50, DATE '2026-05-30'),
-        (2, 102, 99.90, DATE '2026-05-30');
-
+        CREATE TABLE IF NOT EXISTS hms.lab.test_orders (order_id BIGINT, customer_id BIGINT, amount DOUBLE, order_date DATE) USING iceberg;
+        INSERT INTO hms.lab.test_orders VALUES (1, 101, 25.50, DATE '2026-05-30'), (2, 102, 99.90, DATE '2026-05-30');
         SELECT * FROM hms.lab.test_orders;
     "
 ```
-Then check files in HDFS:
+
+## 4. Spark on Kubernetes (K3s) Guide
+
+This lab includes a K3s cluster to simulate production Spark-on-K8s environments.
+
+### Step 1: Verify Connectivity
+The Airflow containers are pre-configured with a `KUBECONFIG` and `kubectl`. Verify that Airflow can see the K3s cluster:
+```bash
+docker compose exec airflow-scheduler kubectl get nodes
 ```
-$ docker compose exec hdfs-namenode hdfs dfs -ls -R /warehouse/iceberg
+
+### Step 2: Prepare your Spark Job
+Place your Python scripts in the `./jobs` directory. They will be automatically available to the Spark pods in Kubernetes at `/opt/airflow/jobs`.
+
+An example `hello_world.py` is already provided.
+
+### Step 3: Run the Example DAG
+1. Access the Airflow UI at http://localhost:8080.
+2. Unpause and trigger the `spark_submit_k8s_example` DAG.
+3. This DAG uses the `SparkSubmitOperator` with a pre-configured connection `spark_k8s` to submit the job to the K3s cluster.
+
+### Step 4: Monitor the Spark Job on K8s
+You can watch the Spark pods being created in the K3s cluster:
+```bash
+docker compose exec airflow-scheduler kubectl get pods -w
 ```
-You should see Iceberg metadata and data files under `/warehouse/iceberg.`
+
+### Step 5: Verify Integration
+The example DAG is configured to use Iceberg and HDFS. You can verify that the Spark job on K8s successfully interacted with the stack by checking the logs or HDFS:
+```bash
+docker compose exec hdfs-namenode hdfs dfs -ls -R /warehouse/iceberg
+```
