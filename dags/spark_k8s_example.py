@@ -21,7 +21,8 @@ dag = DAG(
 spark_k8s_conf = {
     'spark.master': 'k8s://https://k3s:6443',
     'spark.submit.deployMode': 'cluster',
-    'spark.kubernetes.container.image': 'spark:3.5.8-scala2.12-java17-python3-ubuntu',
+    # 'spark.kubernetes.container.image': 'spark:3.5.8-scala2.12-java17-python3-ubuntu',
+    'spark.kubernetes.container.image': 'spark:3.5.10-scala2.12-java17-python3-ubuntu',
     'spark.kubernetes.authenticate.driver.serviceAccountName': 'spark',
     'spark.kubernetes.namespace': 'default',
 
@@ -32,6 +33,10 @@ spark_k8s_conf = {
     'spark.kubernetes.executor.volumes.hostPath.jobs.mount.path': '/opt/airflow/jobs',
     'spark.kubernetes.executor.volumes.hostPath.jobs.options.path': '/opt/spark/jobs',
     'spark.kubernetes.executor.volumes.hostPath.jobs.mount.readOnly': 'true',
+
+    # For bcprov configs
+    # 'spark.driver.extraClassPath': '/opt/spark/extra-jars/bcprov-jdk15on-1.68.jar',
+    # 'spark.executor.extraClassPath': '/opt/spark/extra-jars/bcprov-jdk15on-1.68.jar',
 
     # Mount extra-jars to Spark pods on K8s
     'spark.kubernetes.driver.volumes.hostPath.jars.mount.path': '/opt/spark/extra-jars',
@@ -57,5 +62,8 @@ submit_job = SparkSubmitOperator(
     name='spark-on-k8s-hello-world',
     conn_id='spark_k8s',
     conf=spark_k8s_conf,
+    # env_vars={
+    #     'SPARK_SUBMIT_OPTS': '--driver-class-path /opt/spark/extra-jars/bcprov-jdk15on-1.68.jar'
+    # },
     dag=dag,
 )

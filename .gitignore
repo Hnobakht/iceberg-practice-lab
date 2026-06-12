@@ -220,3 +220,6 @@ __marimo__/
 # Development Drafts
 .back
 logs/*
+
+# Custom ignore
+custom_ignore/*

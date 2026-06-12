@@ -21,7 +21,7 @@ x-airflow-common:
     AIRFLOW_CONN_SPARK_K8S: '{"conn_type": "spark", "host": "k8s://https://k3s:6443", "extra": {"deploy-mode": "cluster"}}'
 
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
-    AIRFLOW__CORE__FERNET_KEY: ${FERNET_KEY:-}
+    # AIRFLOW__CORE__FERNET_KEY: ${FERNET_KEY:-}
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
     AIRFLOW__CORE__LOAD_EXAMPLES: "false"
 
@@ -34,7 +34,7 @@ x-airflow-common:
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: "true"
 
     # OK for a lab. For serious use, build a custom Airflow image instead.
-    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+    # _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
 
     AIRFLOW_CONFIG: "/opt/airflow/config/airflow.cfg"
 
@@ -44,6 +44,13 @@ x-airflow-common:
     SPARK_CONF_DIR: /opt/airflow/conf/spark
     PATH: /usr/local/bin:/home/airflow/.local/bin:/home/airflow/.local/lib/python3.11/site-packages/pyspark/bin:/usr/bin:/bin
     KUBECONFIG: /opt/airflow/conf/kubeconfig/k3s.yaml
+
+    # Flower configs
+    # AIRFLOW__CELERY__FLOWER_HOST: flower
+    # AIRFLOW__CELERY__FLOWER_URL_PREFIX:
+    # AIRFLOW__CELERY__FLOWER_PORT: "5555"
+
+    # SPARK_SUBMIT_OPTS: "--driver-class-path /opt/spark/extra-jars/bcprov-jdk15on-1.68.jar"
 
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
@@ -322,7 +329,8 @@ services:
   # ---------------------------------------------------------------------------
 
   spark-master:
-    image: spark:3.5.8-scala2.12-java17-python3-ubuntu
+    # image: spark:3.5.8-scala2.12-java17-python3-ubuntu
+    image: spark:3.5.10-scala2.12-java17-python3-ubuntu
     container_name: spark-master
     hostname: spark-master
     restart: unless-stopped
@@ -364,7 +372,8 @@ services:
       - bigdata
 
   spark-worker:
-    image: spark:3.5.8-scala2.12-java17-python3-ubuntu
+    # image: spark:3.5.8-scala2.12-java17-python3-ubuntu
+    image: spark:3.5.10-scala2.12-java17-python3-ubuntu
     container_name: spark-worker
     hostname: spark-worker
     restart: unless-stopped
@@ -493,6 +502,7 @@ services:
     environment:
       <<: *airflow-common-env
       DUMB_INIT_SETSID: "0"
+      # CLASSPATH: "/opt/spark/extra-jars/bcprov-jdk15on-1.68.jar"
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
@@ -592,6 +602,7 @@ services:
       - "5555:5555"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:5555/ >/dev/null || exit 1"]
+      # test: ["CMD-SHELL", "curl -fsS http://flower:5555/ >/dev/null || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 30
@@ -612,7 +623,18 @@ services:
     privileged: true
     networks:
       - bigdata
-    command: server --disable=traefik --disable=servicelb --tls-san=k3s
+    command: server --disable=traefik --disable=servicelb --tls-san=k3s --pause-image=registry.k8s.io/pause:3.9
+    # entrypoint: /bin/sh
+    # command: 
+    #   - -c
+    #   - |
+    #     set -e
+    #     mkdir -p /var/lib/rancher/k3s/server/tls
+    #     cp /certs/server.crt /var/lib/rancher/k3s/server/tls/serving-kube-apiserver.crt
+    #     cp /certs/server.key /var/lib/rancher/k3s/server/tls/serving-kube-apiserver.key
+    #     cp /certs/server.crt /var/lib/rancher/k3s/server/tls/server-ca.crt
+    #     cp /certs/server.key /var/lib/rancher/k3s/server/tls/server-ca.key
+    #     exec /bin/k3s server --disable=traefik --disable=servicelb --tls-san=k3s
     environment:
       - K3S_KUBECONFIG_MODE=644
     volumes:
@@ -621,6 +643,7 @@ services:
       - ./jobs:/opt/spark/jobs
       - ./data:/opt/spark/data
       - ./jars:/opt/spark/extra-jars
+      # - ./certs/k3s:/certs:ro
     ports:
       - "6443:6443"
     healthcheck:

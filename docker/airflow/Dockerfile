@@ -21,7 +21,9 @@ USER airflow
 RUN pip install --no-cache-dir \
     --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt" \
     apache-airflow-providers-apache-spark \
-    pyspark==3.5.8
+    pyspark==3.5.10
+
+# pyspark==3.5.8  
 
 ENV SPARK_HOME=/home/airflow/.local/lib/python3.11/site-packages/pyspark
 ENV PATH="${SPARK_HOME}/bin:/home/airflow/.local/bin:${PATH}"
@@ -33,7 +35,8 @@ ENV SPARK_CONF_DIR=/opt/airflow/conf/spark
 # First build the base image manually:
 # docker build --target base -t bigdata-airflow:3.2.2-spark .
 # ============================================================
-FROM bigdata-airflow:3.2.2-spark AS final
+# FROM bigdata-airflow:3.2.2-spark AS final
+FROM bigdata-airflow:3.2.2-spark3.5.10 AS final
 
 USER root
 
@@ -45,5 +48,17 @@ RUN apt-get update \
     && rm kubectl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# # Download BouncyCastle JAR for EC key support
+# RUN curl -L -o /home/airflow/.local/lib/python3.11/site-packages/pyspark/jars/bcprov-jdk18on-1.78.jar \
+#     https://repo1.maven.org/maven2/org/bouncycastle/bcprov-jdk18on/1.78/bcprov-jdk18on-1.78.jar \
+#     && chown airflow:0 /home/airflow/.local/lib/python3.11/site-packages/pyspark/jars/bcprov-jdk18on-1.78.jar
+
+# Download BouncyCastle 1.68 JAR for EC key support
+# The JDK 1.8+ (jdk15on) version is compatible with modern Java runtimes like Java 17.
+# RUN curl -L -o /home/airflow/.local/lib/python3.11/site-packages/pyspark/jars/bcprov-jdk15on-1.68.jar \
+#     https://repo1.maven.org/maven2/org/bouncycastle/bcprov-jdk15on/1.68/bcprov-jdk15on-1.68.jar \
+#     && chown airflow:0 /home/airflow/.local/lib/python3.11/site-packages/pyspark/jars/bcprov-jdk15on-1.68.jar
+
 
 USER airflow

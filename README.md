@@ -7,7 +7,7 @@ This repository provides a local infrastructure to develop and practice ETL on a
 
 1. Build the base airflow image
 ```bash
-docker build --target base -t bigdata-airflow:3.2.2-spark .
+docker build --target base -t bigdata-airflow:3.2.2-spark ./docker/airflow/
 ```
 
 2. From the project root:
@@ -42,10 +42,8 @@ docker compose logs -f k3s-init
 
 7. Start Airflow:
 ```bash
-docker compose up -d airflow-init
+docker compose up -d airflow-init airflow-apiserver airflow-scheduler airflow-dag-processor airflow-worker airflow-triggerer
 docker compose logs -f airflow-init
-
-docker compose up -d airflow-apiserver airflow-scheduler airflow-dag-processor airflow-worker airflow-triggerer
 ```
 Airflow login:
 username: `airflow`
@@ -122,4 +120,21 @@ docker compose exec airflow-scheduler kubectl get pods -w
 The example DAG is configured to use Iceberg and HDFS. You can verify that the Spark job on K8s successfully interacted with the stack by checking the logs or HDFS:
 ```bash
 docker compose exec hdfs-namenode hdfs dfs -ls -R /warehouse/iceberg
+```
+
+### drafts
+
+```bash
+docker compose exec airflow-worker spark-submit \
+  --master k8s://https://k3s:6443 \
+  --deploy-mode cluster \
+  --name test-pi \
+  --packages org.bouncycastle:bcpkix-jdk15on:1.68 \
+  --class org.apache.spark.examples.SparkPi \
+  --conf spark.kubernetes.container.image=spark:3.5.8-scala2.12-java17-python3-ubuntu \
+  --conf spark.kubernetes.authenticate.driver.serviceAccountName=spark \
+  --conf spark.kubernetes.namespace=default \
+  --conf spark.jars.ivy=/home/airflow/.ivy2 \
+  --conf spark.jars=/opt/spark/examples/jars/spark-examples_2.12-3.5.8.jar \
+  local:///opt/spark/examples/jars/spark-examples_2.12-3.5.8.jar
 ```
