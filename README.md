@@ -5,42 +5,42 @@ This repository provides a local infrastructure to develop and practice ETL on a
 
 ## 1. Start it
 
-0. Build the base airflow image
+1. Build the base airflow image
 ```bash
 docker build --target base -t bigdata-airflow:3.2.2-spark .
 ```
 
-1. From the project root:
+2. From the project root:
 ```bash
 docker compose up -d postgres redis
 docker compose exec postgres psql -U airflow -d airflow -c "\l"
 ```
 You should see: `airflow, metastore_db`
 
-2. Start HDFS:
+3. Start HDFS:
 ```bash
 docker compose up -d hdfs-namenode hdfs-datanode hdfs-init
 docker compose logs -f hdfs-init
 ```
 
-3. Start Hive Metastore:
+4. Start Hive Metastore:
 ```bash
 docker compose up -d postgres-driver-downloader hive-metastore
 docker compose logs -f hive-metastore
 ```
 
-4. Start Spark (Standalone Cluster):
+5. Start Spark (Standalone Cluster):
 ```bash
 docker compose up -d spark-master spark-worker
 ```
 
-5. Start Kubernetes (K3s):
+6. Start Kubernetes (K3s):
 ```bash
 docker compose up -d k3s k3s-init
 docker compose logs -f k3s-init
 ```
 
-6. Start Airflow:
+7. Start Airflow:
 ```bash
 docker compose up -d airflow-init
 docker compose logs -f airflow-init
@@ -51,7 +51,7 @@ Airflow login:
 username: `airflow`
 password: `airflow`
 
-7. Open these URLs:
+8. Open these URLs:
 - **Airflow UI:** http://localhost:8080
 - **Spark Master UI:** http://localhost:8081
 - **Spark Worker UI:** http://localhost:8082
