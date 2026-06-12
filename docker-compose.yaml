@@ -135,7 +135,7 @@ services:
     volumes:
       - ./conf/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
       - ./conf/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
-      - ./hdfs/namenode:/hadoop/dfs/name
+      - hdfs-namenode-data:/hadoop/dfs/name
     command:
       - bash
       - -c
@@ -176,7 +176,7 @@ services:
     volumes:
       - ./conf/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
       - ./conf/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
-      - ./hdfs/datanode:/hadoop/dfs/data
+      - hdfs-datanode-data:/hadoop/dfs/data
     command:
       - bash
       - -c
@@ -669,3 +669,5 @@ volumes:
   # ivy-cache:
   k3s-data:
   kubeconfig:
+  hdfs-datanode-data:
+  hdfs-namenode-data:
