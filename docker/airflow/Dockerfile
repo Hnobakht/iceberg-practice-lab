@@ -33,6 +33,7 @@ ENV SPARK_CONF_DIR=/opt/airflow/conf/spark
 # First build the base image manually:
 # docker build --target base -t bigdata-airflow:3.2.2-spark .
 # ============================================================
+# FROM bigdata-airflow:3.2.2-spark AS final
 FROM bigdata-airflow:3.2.2-spark AS final
 
 USER root
@@ -40,10 +41,21 @@ USER root
 # kubectl installation
 RUN apt-get update \
     && arch=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') \
-    && curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${arch}/kubectl" \
+    && curl -fsSLO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${arch}/kubectl" \
     && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl \
     && rm kubectl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+    
+ARG BOUNCYCASTLE_VERSION=1.78.1
+RUN set -eux; \
+    for artifact in bcprov bcpkix bcutil; do \
+      curl -fsSL \
+        "https://repo1.maven.org/maven2/org/bouncycastle/${artifact}-jdk18on/${BOUNCYCASTLE_VERSION}/${artifact}-jdk18on-${BOUNCYCASTLE_VERSION}.jar" \
+        -o "${SPARK_HOME}/jars/${artifact}-jdk18on-${BOUNCYCASTLE_VERSION}.jar"; \
+    done; \
+    chown airflow:0 "${SPARK_HOME}"/jars/bc*-jdk18on-${BOUNCYCASTLE_VERSION}.jar; \
+    chmod 0644 "${SPARK_HOME}"/jars/bc*-jdk18on-${BOUNCYCASTLE_VERSION}.jar
 
 USER airflow
