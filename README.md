@@ -138,3 +138,17 @@ docker compose exec airflow-worker spark-submit \
   --conf spark.jars=/opt/spark/examples/jars/spark-examples_2.12-3.5.8.jar \
   local:///opt/spark/examples/jars/spark-examples_2.12-3.5.8.jar
 ```
+
+```bash
+sudo docker build \
+  --network=host \
+  --build-arg HTTP_PROXY=http://127.0.0.1:2080 \
+  --build-arg HTTPS_PROXY=http://127.0.0.1:2080 \
+  --build-arg http_proxy=http://127.0.0.1:2080 \
+  --build-arg https_proxy=http://127.0.0.1:2080 \
+  --build-arg NO_PROXY=localhost,127.0.0.1,::1,k3s,hdfs-namenode,hive-metastore,postgres,redis \
+  --build-arg no_proxy=localhost,127.0.0.1,::1,k3s,hdfs-namenode,hive-metastore,postgres,redis \
+  --target base \
+  -t bigdata-airflow:3.2.2-spark \
+  ./docker/airflow/
+```
