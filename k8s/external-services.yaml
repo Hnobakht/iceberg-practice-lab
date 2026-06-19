@@ -1,23 +1,12 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: hdfs-namenode
-spec:
-  type: ExternalName
-  externalName: hdfs-namenode.
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: hive-metastore
-spec:
-  type: ExternalName
-  externalName: hive-metastore.
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres
-spec:
-  type: ExternalName
-  externalName: postgres.
+# This file is intentionally placed as a static manifest.
+#
+# Docker Compose container IPs can change after containers are recreated.
+# The k3s-init service now runs /k8s/sync-external-services.sh, which resolves
+# the current Docker Compose IPs and applies Kubernetes Service + Endpoints
+# objects for:
+#   - hive-metastore
+#   - hdfs-namenode
+#   - hdfs-datanode
+#   - postgres
+#
+# See k8s/sync-external-services.sh for the generated manifest.
