@@ -605,32 +605,26 @@ services:
   k3s-init:
     image: rancher/k3s:v1.31.2-k3s1
     container_name: k3s-init
+    restart: unless-stopped
     networks:
       - bigdata
+    environment:
+      SYNC_INTERVAL_SECONDS: "30"
     volumes:
       - kubeconfig:/etc/rancher/k3s
       - ./k8s:/k8s
     depends_on:
       k3s:
         condition: service_healthy
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        echo "Preparing kubeconfig..."
-        # Wait for k3s to generate the file
-        until [ -f /etc/rancher/k3s/k3s.yaml ]; do sleep 2; done
-
-        # Replace 127.0.0.1 with k3s host for both this container and Airflow
-        sed -i 's/127.0.0.1/k3s/g' /etc/rancher/k3s/k3s.yaml
-
-        echo "Waiting for K3s to be ready..."
-        until kubectl get nodes; do sleep 2; done
-
-        echo "Applying K8s manifests..."
-        kubectl apply -f /k8s/spark-rbac.yaml
-        kubectl apply -f /k8s/external-services.yaml
-
-        echo "K3s initialization complete."
+      postgres:
+        condition: service_healthy
+      hdfs-namenode:
+        condition: service_healthy
+      hdfs-datanode:
+        condition: service_healthy
+      hive-metastore:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/k8s/sync-external-services.sh"]
 
 networks:
   bigdata:
