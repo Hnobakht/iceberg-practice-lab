@@ -41,9 +41,9 @@ spark_k8s_conf = {
     'spark.hadoop.fs.defaultFS': 'hdfs://hdfs-namenode:9000',
     'spark.sql.catalog.hms': 'org.apache.iceberg.spark.SparkCatalog',
     'spark.sql.catalog.hms.type': 'hive',
-    'spark.sql.catalog.hms.uri': 'thrift://hive-metastore.default.svc.cluster.local:9083',
-    'spark.hadoop.hive.metastore.uris': 'thrift://hive-metastore.default.svc.cluster.local:9083',
-    'spark.sql.catalog.hms.warehouse': 'hdfs://hdfs-namenode.default.svc.cluster.local:9000/warehouse/iceberg',
+    'spark.sql.catalog.hms.uri': 'thrift://hive-metastore:9083',
+    'spark.hadoop.hive.metastore.uris': 'thrift://hive-metastore:9083',
+    'spark.sql.catalog.hms.warehouse': 'hdfs://hdfs-namenode:9000/warehouse/iceberg',
     'spark.sql.extensions': 'org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions',
     'spark.jars': 'local:///opt/spark/extra-jars/iceberg-spark-runtime-3.5_2.12-1.6.1.jar',
 }
