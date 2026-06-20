@@ -9,6 +9,7 @@ x-airflow-common:
     target: final
   env_file:
     - ${ENV_FILE_PATH:-.env}
+  mem_limit: ${AIRFLOW_COMMON_MEM_LIMIT:-16g}
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
@@ -70,6 +71,7 @@ services:
     image: postgres:16
     container_name: postgres
     hostname: postgres
+    mem_limit: ${POSTGRES_MEM_LIMIT:-16g}
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
@@ -93,6 +95,7 @@ services:
     image: redis:7.2-bookworm
     container_name: redis
     hostname: redis
+    mem_limit: ${REDIS_MEM_LIMIT:-16g}
     expose:
       - 6379
     healthcheck:
@@ -109,6 +112,7 @@ services:
     image: apache/hadoop:3.4.3
     container_name: hdfs-namenode
     hostname: hdfs-namenode
+    mem_limit: ${HDFS_NAMENODE_MEM_LIMIT:-16g}
     restart: unless-stopped
     user: "0:0"
     environment:
@@ -151,6 +155,7 @@ services:
     image: apache/hadoop:3.4.3
     container_name: hdfs-datanode
     hostname: hdfs-datanode
+    mem_limit: ${HDFS_DATANODE_MEM_LIMIT:-16g}
     restart: unless-stopped
     user: "0:0"
     environment:
@@ -190,6 +195,7 @@ services:
     image: apache/hadoop:3.4.3
     container_name: hdfs-init
     hostname: hdfs-init
+    mem_limit: ${HDFS_INIT_MEM_LIMIT:-16g}
     restart: "no"
     user: "0:0"
     environment:
@@ -234,6 +240,7 @@ services:
   postgres-driver-downloader:
     image: curlimages/curl:8.10.1
     container_name: postgres-driver-downloader
+    mem_limit: ${POSTGRES_DRIVER_DOWNLOADER_MEM_LIMIT:-16g}
     restart: "no"
     user: "0:0"
     volumes:
@@ -261,6 +268,7 @@ services:
     image: apache/hive:4.0.0
     container_name: hive-metastore
     hostname: hive-metastore
+    mem_limit: ${HIVE_METASTORE_MEM_LIMIT:-16g}
     restart: unless-stopped
     environment:
       SERVICE_NAME: metastore
@@ -305,6 +313,7 @@ services:
     image: spark:3.5.8-scala2.12-java17-python3-ubuntu
     container_name: spark-master
     hostname: spark-master
+    mem_limit: ${SPARK_MASTER_MEM_LIMIT:-16g}
     restart: unless-stopped
     user: "spark"
     environment:
@@ -348,6 +357,7 @@ services:
     image: spark:3.5.8-scala2.12-java17-python3-ubuntu
     container_name: spark-worker
     hostname: spark-worker
+    mem_limit: ${SPARK_WORKER_MEM_LIMIT:-16g}
     restart: unless-stopped
     user: "spark"
     environment:
@@ -386,6 +396,7 @@ services:
   airflow-apiserver:
     <<: *airflow-common
     container_name: airflow-apiserver
+    mem_limit: ${AIRFLOW_APISERVER_MEM_LIMIT:-16g}
     command: api-server
     ports:
       - "8080:8080"
@@ -404,6 +415,7 @@ services:
   airflow-scheduler:
     <<: *airflow-common
     container_name: airflow-scheduler
+    mem_limit: ${AIRFLOW_SCHEDULER_MEM_LIMIT:-16g}
     command: scheduler
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8974/health >/dev/null || exit 1"]
@@ -420,6 +432,7 @@ services:
   airflow-dag-processor:
     <<: *airflow-common
     container_name: airflow-dag-processor
+    mem_limit: ${AIRFLOW_DAG_PROCESSOR_MEM_LIMIT:-16g}
     command: dag-processor
     healthcheck:
       test: ["CMD-SHELL", "airflow jobs check --job-type DagProcessorJob --hostname \"$${HOSTNAME}\" || exit 1"]
@@ -436,6 +449,7 @@ services:
   airflow-triggerer:
     <<: *airflow-common
     container_name: airflow-triggerer
+    mem_limit: ${AIRFLOW_TRIGGERER_MEM_LIMIT:-16g}
     command: triggerer
     healthcheck:
       test: ["CMD-SHELL", "airflow jobs check --job-type TriggererJob --hostname \"$${HOSTNAME}\" || exit 1"]
@@ -452,6 +466,7 @@ services:
   airflow-worker:
     <<: *airflow-common
     container_name: airflow-worker
+    mem_limit: ${AIRFLOW_WORKER_MEM_LIMIT:-16g}
     command: celery worker
     healthcheck:
       test:
@@ -476,6 +491,7 @@ services:
   airflow-init:
     <<: *airflow-common
     container_name: airflow-init
+    mem_limit: ${AIRFLOW_INIT_MEM_LIMIT:-16g}
     entrypoint: /bin/bash
     command:
       - -c
@@ -544,6 +560,7 @@ services:
   airflow-cli:
     <<: *airflow-common
     container_name: airflow-cli
+    mem_limit: ${AIRFLOW_CLI_MEM_LIMIT:-16g}
     profiles:
       - debug
     environment:
@@ -559,6 +576,7 @@ services:
   flower:
     <<: *airflow-common
     container_name: flower
+    mem_limit: ${FLOWER_MEM_LIMIT:-16g}
     command: celery flower
     profiles:
       - flower
@@ -580,6 +598,7 @@ services:
   k3s:
     image: rancher/k3s:v1.31.2-k3s1
     container_name: k3s
+    mem_limit: ${K3S_MEM_LIMIT:-16g}
     privileged: true
     networks:
       - bigdata
@@ -605,6 +624,7 @@ services:
   k3s-init:
     image: rancher/k3s:v1.31.2-k3s1
     container_name: k3s-init
+    mem_limit: ${K3S_INIT_MEM_LIMIT:-16g}
     restart: unless-stopped
     networks:
       - bigdata
