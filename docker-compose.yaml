@@ -307,6 +307,32 @@ services:
     networks:
       - bigdata
 
+
+  trino:
+    image: ${TRINO_IMAGE:-trinodb/trino:481}
+    container_name: trino
+    hostname: trino
+    mem_limit: ${TRINO_MEM_LIMIT:-16g}
+    restart: unless-stopped
+    ports:
+      - "8084:8080"
+    volumes:
+      - ./conf/trino/catalog:/etc/trino/catalog:ro
+      - ./conf/hadoop-client:/etc/hadoop/conf:ro
+    depends_on:
+      hive-metastore:
+        condition: service_healthy
+      hdfs-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "trino --server http://localhost:8080 --execute 'SELECT 1' >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
+    networks:
+      - bigdata
+
   # Spark standalone cluster
   spark-master:
     # image: spark:3.5.8-scala2.12-java17-python3-ubuntu
