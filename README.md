@@ -29,18 +29,24 @@ docker compose up -d postgres-driver-downloader hive-metastore
 docker compose logs -f hive-metastore
 ```
 
-5. Start Spark (Standalone Cluster):
+5. Start Trino:
+```bash
+docker compose up -d trino
+```
+Trino UI: http://localhost:8083
+
+6. Start Spark (Standalone Cluster):
 ```bash
 docker compose up -d spark-master spark-worker
 ```
 
-6. Start Kubernetes (K3s):
+7. Start Kubernetes (K3s):
 ```bash
 docker compose up -d k3s k3s-init
 docker compose logs -f k3s-init
 ```
 
-7. Start Airflow:
+8. Start Airflow:
 ```bash
 docker compose up -d airflow-init airflow-apiserver airflow-scheduler airflow-dag-processor airflow-worker airflow-triggerer
 docker compose logs -f airflow-init
@@ -49,10 +55,11 @@ Airflow login:
 username: `airflow`
 password: `airflow`
 
-8. Open these URLs:
+9. Open these URLs:
 - **Airflow UI:** http://localhost:8080
 - **Spark Master UI:** http://localhost:8081
 - **Spark Worker UI:** http://localhost:8082
+- **Trino UI:** http://localhost:8083
 - **HDFS NameNode UI:** http://localhost:9870
 
 ## 2. Basic health checks
@@ -65,6 +72,11 @@ docker compose exec hdfs-namenode hdfs dfs -ls /
 Check Hive Metastore:
 ```bash
 docker compose exec hive-metastore bash -c '</dev/tcp/localhost/9083' && echo OK
+```
+
+Check Trino:
+```bash
+docker compose exec trino trino --execute "SHOW SCHEMAS FROM hms"
 ```
 
 Check K3s Cluster (from Airflow container):
@@ -88,6 +100,11 @@ docker compose exec spark-master /opt/spark/bin/spark-sql \
         INSERT INTO hms.lab.test_orders VALUES (1, 101, 25.50, DATE '2026-05-30'), (2, 102, 99.90, DATE '2026-05-30');
         SELECT * FROM hms.lab.test_orders;
     "
+```
+
+Query the same Iceberg table from Trino:
+```bash
+docker compose exec trino trino --execute "SELECT * FROM hms.lab.test_orders"
 ```
 
 ## 4. Spark on Kubernetes (K3s) Guide
