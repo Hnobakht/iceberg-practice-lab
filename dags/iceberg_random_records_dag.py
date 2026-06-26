@@ -23,12 +23,11 @@ spark_k8s_conf = {
     "spark.kubernetes.authenticate.driver.serviceAccountName": "spark",
     "spark.kubernetes.namespace": "default",
 
-    # The Airflow container submits local:///opt/airflow/jobs/*.py.
-    # Inside the K3s node, /opt/spark/jobs is host-mounted to /opt/airflow/jobs in the driver/executor pods.
-    "spark.kubernetes.driver.volumes.hostPath.jobs.mount.path": "/opt/airflow/jobs",
+    # Inside the K3s node, /opt/spark/jobs is host-mounted in the driver/executor pods.
+    "spark.kubernetes.driver.volumes.hostPath.jobs.mount.path": "/opt/spark/jobs",
     "spark.kubernetes.driver.volumes.hostPath.jobs.options.path": "/opt/spark/jobs",
     "spark.kubernetes.driver.volumes.hostPath.jobs.mount.readOnly": "true",
-    "spark.kubernetes.executor.volumes.hostPath.jobs.mount.path": "/opt/airflow/jobs",
+    "spark.kubernetes.executor.volumes.hostPath.jobs.mount.path": "/opt/spark/jobs",
     "spark.kubernetes.executor.volumes.hostPath.jobs.options.path": "/opt/spark/jobs",
     "spark.kubernetes.executor.volumes.hostPath.jobs.mount.readOnly": "true",
 
@@ -68,7 +67,7 @@ with DAG(
 ) as dag:
     check_table_exists = SparkSubmitOperator(
         task_id="check_table_exists",
-        application="local:///opt/airflow/jobs/iceberg_check_table.py",
+        application="local:///opt/spark/jobs/iceberg_check_table.py",
         name="iceberg-check-table",
         conn_id="spark_k8s",
         conf=spark_k8s_conf,
@@ -77,7 +76,7 @@ with DAG(
 
     create_or_truncate_table = SparkSubmitOperator(
         task_id="create_or_truncate_table",
-        application="local:///opt/airflow/jobs/iceberg_prepare_table.py",
+        application="local:///opt/spark/jobs/iceberg_prepare_table.py",
         name="iceberg-create-or-truncate-table",
         conn_id="spark_k8s",
         conf=spark_k8s_conf,
@@ -86,7 +85,7 @@ with DAG(
 
     insert_random_records = SparkSubmitOperator(
         task_id="insert_random_records",
-        application="local:///opt/airflow/jobs/iceberg_insert_random_records.py",
+        application="local:///opt/spark/jobs/iceberg_insert_random_records.py",
         name="iceberg-insert-random-records",
         conn_id="spark_k8s",
         conf=spark_k8s_conf,
@@ -95,7 +94,7 @@ with DAG(
 
     select_records = SparkSubmitOperator(
         task_id="select_records",
-        application="local:///opt/airflow/jobs/iceberg_select_records.py",
+        application="local:///opt/spark/jobs/iceberg_select_records.py",
         name="iceberg-select-records",
         conn_id="spark_k8s",
         conf=spark_k8s_conf,

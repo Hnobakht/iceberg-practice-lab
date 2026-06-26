@@ -24,10 +24,10 @@ spark_k8s_conf = {
     'spark.kubernetes.authenticate.driver.serviceAccountName': 'spark',
     'spark.kubernetes.namespace': 'default',
 
-    'spark.kubernetes.driver.volumes.hostPath.jobs.mount.path': '/opt/airflow/jobs',
+    'spark.kubernetes.driver.volumes.hostPath.jobs.mount.path': '/opt/spark/jobs',
     'spark.kubernetes.driver.volumes.hostPath.jobs.options.path': '/opt/spark/jobs',
     'spark.kubernetes.driver.volumes.hostPath.jobs.mount.readOnly': 'true',
-    'spark.kubernetes.executor.volumes.hostPath.jobs.mount.path': '/opt/airflow/jobs',
+    'spark.kubernetes.executor.volumes.hostPath.jobs.mount.path': '/opt/spark/jobs',
     'spark.kubernetes.executor.volumes.hostPath.jobs.options.path': '/opt/spark/jobs',
     'spark.kubernetes.executor.volumes.hostPath.jobs.mount.readOnly': 'true',
 
@@ -50,7 +50,7 @@ spark_k8s_conf = {
 
 submit_job = SparkSubmitOperator(
     task_id='submit_hello_world',
-    application='local:///opt/airflow/jobs/hello_world.py',
+    application='local:///opt/spark/jobs/hello_world.py',
     name='spark-on-k8s-hello-world',
     conn_id='spark_k8s',
     conf=spark_k8s_conf,

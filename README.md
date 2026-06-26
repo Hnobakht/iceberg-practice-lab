@@ -118,7 +118,7 @@ docker compose exec airflow-scheduler kubectl get nodes
 ```
 
 ### Step 2: Prepare your Spark Job
-Place your Python scripts in the `./jobs` directory. They will be automatically available to the Spark pods in Kubernetes at `/opt/airflow/jobs`.
+Place your Python scripts in the `./jobs` directory. They will be automatically available to the Spark pods in Kubernetes at `/opt/spark/jobs`.
 
 An example `hello_world.py` is already provided.
 
