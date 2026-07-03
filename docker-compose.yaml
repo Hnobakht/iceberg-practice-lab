@@ -49,7 +49,6 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/jars:/opt/spark/extra-jars
     - ${AIRFLOW_PROJ_DIR:-.}/conf/hadoop-client:/opt/airflow/conf/hadoop:ro
     - ${AIRFLOW_PROJ_DIR:-.}/conf/spark:/opt/airflow/conf/spark:ro
-    # - ivy-cache:/home/airflow/.ivy2
     - kubeconfig:/opt/airflow/conf/kubeconfig:ro
 
   user: "${AIRFLOW_UID:-50000}:0"
@@ -333,7 +332,6 @@ services:
 
   # Spark standalone cluster
   spark-master:
-    # image: spark:3.5.8-scala2.12-java17-python3-ubuntu
     image: spark:3.5.8-scala2.12-java17-python3-ubuntu
     container_name: spark-master
     hostname: spark-master
@@ -357,7 +355,6 @@ services:
       - ./jobs:/opt/spark/jobs
       - ./data:/opt/spark/data
       - ./jars:/opt/spark/extra-jars
-      # - ivy-cache:/opt/spark/.ivy2
     command: >
       /opt/spark/bin/spark-class
       org.apache.spark.deploy.master.Master
@@ -379,7 +376,6 @@ services:
       - bigdata
 
   spark-worker:
-    # image: spark:3.5.8-scala2.12-java17-python3-ubuntu
     image: spark:3.5.8-scala2.12-java17-python3-ubuntu
     container_name: spark-worker
     hostname: spark-worker
@@ -401,7 +397,6 @@ services:
       - ./jobs:/opt/spark/jobs
       - ./data:/opt/spark/data
       - ./jars:/opt/spark/extra-jars
-      # - ivy-cache:/opt/spark/.ivy2
     command: >
       /opt/spark/bin/spark-class
       org.apache.spark.deploy.worker.Worker
@@ -630,7 +625,7 @@ services:
     privileged: true
     networks:
       - bigdata
-    command: server --disable=traefik --disable=servicelb --tls-san=k3s #--pause-image=docker.io/rancher/pause:3.1
+    command: server --disable=traefik --disable=servicelb --tls-san=k3s
     environment:
       - K3S_KUBECONFIG_MODE=644
     volumes:
@@ -639,7 +634,6 @@ services:
       - ./jobs:/opt/spark/jobs
       - ./data:/opt/spark/data
       - ./jars:/opt/spark/extra-jars
-      # - ./certs/k3s:/certs:ro
     ports:
       - "6443:6443"
     healthcheck:
@@ -680,7 +674,6 @@ networks:
 
 volumes:
   postgres-db-volume:
-  # ivy-cache:
   k3s-data:
   kubeconfig:
   hdfs-datanode-data:

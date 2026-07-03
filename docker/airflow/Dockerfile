@@ -33,7 +33,6 @@ ENV SPARK_CONF_DIR=/opt/airflow/conf/spark
 # First build the base image manually:
 # docker build --target base -t bigdata-airflow:3.2.2-spark .
 # ============================================================
-# FROM bigdata-airflow:3.2.2-spark AS final
 FROM bigdata-airflow:3.2.2-spark AS final
 
 USER root

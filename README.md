@@ -34,6 +34,10 @@ First, build the custom Airflow image that includes the necessary Spark and Kube
 ```bash
 docker build --target base -t bigdata-airflow:3.2.2-spark ./docker/airflow/
 ```
+Optionally build the final image.
+```bash
+docker build --target final -t bigdata-airflow:3.2.2-spark-kubctl ./docker/airflow/
+```
 
 ### Step B: Core Services (Postgres & Redis)
 Start the database and message broker.
