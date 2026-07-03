@@ -3,90 +3,128 @@
 
 This repository provides a local infrastructure to develop and practice ETL on a Big Data stack including HDFS, Hive Metastore, Iceberg, Spark, and Airflow. It also includes a K3s Kubernetes cluster to simulate Spark-on-Kubernetes deployments.
 
-## 1. Start it
+This is a teaching and practice lab designed to give you hands-on experience with modern data engineering tools.
 
-1. Build the base airflow image
+## 1. Config it
+
+Before starting, you need to configure your environment. We provide two sample files based on your machine's RAM capacity:
+
+- `.env_sample_8gb`: For machines with limited resources (~8GB RAM).
+- `.env_sample_32gb`: For more powerful machines (~32GB RAM).
+
+These files define memory limits for each service (e.g., `SPARK_WORKER_MEM_LIMIT`, `HIVE_METASTORE_MEM_LIMIT`) to ensure the lab runs smoothly without crashing your host system.
+
+**To configure:**
+Choose the appropriate file and rename it to `.env`:
+
+```bash
+# For 8GB RAM machines
+cp .env_sample_8gb .env
+
+# OR for 32GB+ RAM machines
+cp .env_sample_32gb .env
+```
+
+## 2. Start it
+
+Follow these steps in order to bring up the stack.
+
+### Step A: Build the Airflow Image
+First, build the custom Airflow image that includes the necessary Spark and Kubernetes dependencies.
 ```bash
 docker build --target base -t bigdata-airflow:3.2.2-spark ./docker/airflow/
 ```
 
-2. From the project root:
+### Step B: Core Services (Postgres & Redis)
+Start the database and message broker.
 ```bash
 docker compose up -d postgres redis
+# Verify postgres is ready
 docker compose exec postgres psql -U airflow -d airflow -c "\l"
 ```
-You should see: `airflow, metastore_db`
+*Expected output: `airflow, metastore_db`*
 
-3. Start HDFS:
+### Step C: Storage & Metastore (HDFS & Hive)
+Start the HDFS cluster and the Hive Metastore.
 ```bash
+# HDFS
 docker compose up -d hdfs-namenode hdfs-datanode hdfs-init
-docker compose logs -f hdfs-init
-```
+docker compose logs -f hdfs-init # Wait for initialization to complete
 
-4. Start Hive Metastore:
-```bash
+# Hive Metastore
 docker compose up -d postgres-driver-downloader hive-metastore
-docker compose logs -f hive-metastore
+docker compose logs -f hive-metastore # Wait for it to start
 ```
 
-5. Start Trino:
+### Step D: Query Engine & Processing (Trino & Spark)
+Start Trino for SQL queries and Spark for distributed processing.
 ```bash
+# Trino
 docker compose up -d trino
-```
-Trino UI: http://localhost:8083
 
-6. Start Spark (Standalone Cluster):
-```bash
+# Spark Standalone
 docker compose up -d spark-master spark-worker
 ```
 
-7. Start Kubernetes (K3s):
+### Step E: Kubernetes Cluster (K3s)
+Start the local K3s cluster for Spark-on-K8s simulation.
 ```bash
 docker compose up -d k3s k3s-init
-docker compose logs -f k3s-init
+docker compose logs -f k3s-init # Wait for K3s to be ready
 ```
 
-8. Start Airflow:
+### Step F: Orchestration (Airflow)
+Finally, start the Airflow components.
 ```bash
-docker compose up -d airflow-init airflow-apiserver airflow-scheduler airflow-dag-processor airflow-worker airflow-triggerer
-docker compose logs -f airflow-init
+docker compose up -d airflow-init
+docker compose logs -f airflow-init # Wait for DB migrations
+
+docker compose up -d airflow-apiserver airflow-scheduler airflow-dag-processor airflow-worker airflow-triggerer
 ```
-Airflow login:
-username: `airflow`
-password: `airflow`
 
-9. Open these URLs:
-- **Airflow UI:** http://localhost:8080
-- **Spark Master UI:** http://localhost:8081
-- **Spark Worker UI:** http://localhost:8082
-- **Trino UI:** http://localhost:8083
-- **HDFS NameNode UI:** http://localhost:9870
+## 3. Access the UIs
 
-## 2. Basic health checks
+Once everything is up, you can access the following interfaces:
 
-Check HDFS:
+- **Airflow UI:** [http://localhost:8080](http://localhost:8080) (User/Pass: `airflow` / `airflow`)
+- **Spark Master UI:** [http://localhost:8081](http://localhost:8081)
+- **Spark Worker UI:** [http://localhost:8082](http://localhost:8082)
+- **Trino UI:** [http://localhost:8083](http://localhost:8083)
+- **HDFS NameNode UI:** [http://localhost:9870](http://localhost:9870)
+
+---
+
+## 4. Basic health checks
+
+Verify that the main components are communicating correctly:
+
+**Check HDFS:**
 ```bash
 docker compose exec hdfs-namenode hdfs dfs -ls /
 ```
 
-Check Hive Metastore:
+**Check Hive Metastore:**
 ```bash
 docker compose exec hive-metastore bash -c '</dev/tcp/localhost/9083' && echo OK
 ```
 
-Check Trino:
+**Check Trino connectivity to Hive Metastore:**
 ```bash
 docker compose exec trino trino --execute "SHOW SCHEMAS FROM hms"
 ```
 
-Check K3s Cluster (from Airflow container):
+**Check K3s Cluster (from Airflow):**
 ```bash
 docker compose exec airflow-scheduler kubectl get nodes
 ```
 
-## 3. Spark Standalone Smoke Test (Iceberg)
+---
 
-Run this from the Spark master container to verify Iceberg + Hive Metastore + HDFS:
+## 5. Spark Smoke Test (Iceberg)
+
+Verify the integration of Spark, Iceberg, Hive Metastore, and HDFS.
+
+Run this from the Spark master container to create an Iceberg table and insert data:
 ```bash
 docker compose exec spark-master /opt/spark/bin/spark-sql \
     --conf spark.sql.catalog.hms=org.apache.iceberg.spark.SparkCatalog \
@@ -102,17 +140,19 @@ docker compose exec spark-master /opt/spark/bin/spark-sql \
     "
 ```
 
-Query the same Iceberg table from Trino:
+**Query the same Iceberg table from Trino:**
 ```bash
 docker compose exec trino trino --execute "SELECT * FROM hms.lab.test_orders"
 ```
 
-## 4. Spark on Kubernetes (K3s) Guide
+---
+
+## 6. Spark on Kubernetes (K3s) Guide
 
 This lab includes a K3s cluster to simulate production Spark-on-K8s environments.
 
 ### Step 1: Verify Connectivity
-The Airflow containers are pre-configured with a `KUBECONFIG` and `kubectl`. Verify that Airflow can see the K3s cluster:
+The Airflow containers are pre-configured with `KUBECONFIG` and `kubectl`.
 ```bash
 docker compose exec airflow-scheduler kubectl get nodes
 ```
@@ -120,52 +160,19 @@ docker compose exec airflow-scheduler kubectl get nodes
 ### Step 2: Prepare your Spark Job
 Place your Python scripts in the `./jobs` directory. They will be automatically available to the Spark pods in Kubernetes at `/opt/spark/jobs`.
 
-An example `hello_world.py` is already provided.
-
 ### Step 3: Run the Example DAG
-1. Access the Airflow UI at http://localhost:8080.
+1. Access the [Airflow UI](http://localhost:8080).
 2. Unpause and trigger the `spark_submit_k8s_example` DAG.
-3. This DAG uses the `SparkSubmitOperator` with a pre-configured connection `spark_k8s` to submit the job to the K3s cluster.
+3. This DAG uses the `SparkSubmitOperator` to submit the job to the K3s cluster.
 
 ### Step 4: Monitor the Spark Job on K8s
-You can watch the Spark pods being created in the K3s cluster:
+Watch the Spark pods being created:
 ```bash
 docker compose exec airflow-scheduler kubectl get pods -w
 ```
 
 ### Step 5: Verify Integration
-The example DAG is configured to use Iceberg and HDFS. You can verify that the Spark job on K8s successfully interacted with the stack by checking the logs or HDFS:
+Check if the Spark job successfully wrote data to HDFS:
 ```bash
 docker compose exec hdfs-namenode hdfs dfs -ls -R /warehouse/iceberg
-```
-
-### drafts
-
-```bash
-docker compose exec airflow-worker spark-submit \
-  --master k8s://https://k3s:6443 \
-  --deploy-mode cluster \
-  --name test-pi \
-  --packages org.bouncycastle:bcpkix-jdk15on:1.68 \
-  --class org.apache.spark.examples.SparkPi \
-  --conf spark.kubernetes.container.image=spark:3.5.8-scala2.12-java17-python3-ubuntu \
-  --conf spark.kubernetes.authenticate.driver.serviceAccountName=spark \
-  --conf spark.kubernetes.namespace=default \
-  --conf spark.jars.ivy=/home/airflow/.ivy2 \
-  --conf spark.jars=/opt/spark/examples/jars/spark-examples_2.12-3.5.8.jar \
-  local:///opt/spark/examples/jars/spark-examples_2.12-3.5.8.jar
-```
-
-```bash
-sudo docker build \
-  --network=host \
-  --build-arg HTTP_PROXY=http://127.0.0.1:2080 \
-  --build-arg HTTPS_PROXY=http://127.0.0.1:2080 \
-  --build-arg http_proxy=http://127.0.0.1:2080 \
-  --build-arg https_proxy=http://127.0.0.1:2080 \
-  --build-arg NO_PROXY=localhost,127.0.0.1,::1,k3s,hdfs-namenode,hive-metastore,postgres,redis \
-  --build-arg no_proxy=localhost,127.0.0.1,::1,k3s,hdfs-namenode,hive-metastore,postgres,redis \
-  --target base \
-  -t bigdata-airflow:3.2.2-spark \
-  ./docker/airflow/
 ```
