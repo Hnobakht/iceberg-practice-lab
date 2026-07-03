@@ -223,3 +223,6 @@ logs/*
 
 # Custom ignore
 custom_ignore/*
+
+# Data
+spark/data/*
