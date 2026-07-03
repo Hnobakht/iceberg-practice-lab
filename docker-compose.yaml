@@ -36,20 +36,20 @@ x-airflow-common:
 
     # Airflow 3.2.2 image currently uses Python 3.11.
     SPARK_HOME: /home/airflow/.local/lib/python3.11/site-packages/pyspark
-    HADOOP_CONF_DIR: /opt/airflow/conf/hadoop
-    SPARK_CONF_DIR: /opt/airflow/conf/spark
+    HADOOP_CONF_DIR: /opt/labs/conf/hadoop
+    SPARK_CONF_DIR: /opt/labs/conf/spark
     PATH: /usr/local/bin:/home/airflow/.local/bin:/home/airflow/.local/lib/python3.11/site-packages/pyspark/bin:/usr/bin:/bin
-    KUBECONFIG: /opt/airflow/conf/kubeconfig/k3s.yaml
+    KUBECONFIG: /opt/labs/conf/kubeconfig/k3s.yaml
 
   volumes:
-    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
-    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
-    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
-    - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
-    - ${AIRFLOW_PROJ_DIR:-.}/jars:/opt/spark/extra-jars
-    - ${AIRFLOW_PROJ_DIR:-.}/conf/hadoop-client:/opt/airflow/conf/hadoop:ro
-    - ${AIRFLOW_PROJ_DIR:-.}/conf/spark:/opt/airflow/conf/spark:ro
-    - kubeconfig:/opt/airflow/conf/kubeconfig:ro
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/dags:/opt/airflow/dags
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow//logs:/opt/airflow/logs
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow//config:/opt/airflow/config
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow//plugins:/opt/airflow/plugins
+    - ${AIRFLOW_PROJ_DIR:-.}/etc/jars:/opt/spark/extra-jars
+    - ${AIRFLOW_PROJ_DIR:-.}/configs/hadoop-client:/opt/labs/conf/hadoop:ro
+    - ${AIRFLOW_PROJ_DIR:-.}/configs/spark:/opt/labs/conf/spark:ro
+    - kubeconfig:/opt/labs/conf/kubeconfig:ro
 
   user: "${AIRFLOW_UID:-50000}:0"
 
@@ -77,7 +77,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
-      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+      - ./configs/postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U airflow -d airflow -h localhost"]
       interval: 10s
@@ -120,8 +120,8 @@ services:
       - "9870:9870"
       - "9000:9000"
     volumes:
-      - ./conf/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
-      - ./conf/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+      - ./configs/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./configs/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
       - hdfs-namenode-data:/hadoop/dfs/name
     command:
       - bash
@@ -162,8 +162,8 @@ services:
     ports:
       - "9864:9864"
     volumes:
-      - ./conf/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
-      - ./conf/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+      - ./configs/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./configs/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
       - hdfs-datanode-data:/hadoop/dfs/data
     command:
       - bash
@@ -198,8 +198,8 @@ services:
     environment:
       HADOOP_CONF_DIR: /opt/hadoop/etc/hadoop
     volumes:
-      - ./conf/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
-      - ./conf/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+      - ./configs/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./configs/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
     command:
       - bash
       - -c
@@ -241,7 +241,7 @@ services:
     restart: "no"
     user: "0:0"
     volumes:
-      - ./jars:/jars
+      - ./etc/jars:/jars
     command:
       - sh
       - -c
@@ -284,10 +284,10 @@ services:
     ports:
       - "9083:9083"
     volumes:
-      - ./conf/hive/hive-site.xml:/opt/hive/conf/hive-site.xml:ro
-      - ./conf/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
-      - ./conf/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
-      - ./jars/postgresql-42.7.3.jar:/opt/hive/lib/postgres.jar:ro
+      - ./configs/hive/hive-site.xml:/opt/hive/conf/hive-site.xml:ro
+      - ./configs/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./configs/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+      - ./etc/jars/postgresql-42.7.3.jar:/opt/hive/lib/postgres.jar:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -314,8 +314,8 @@ services:
     ports:
       - "8084:8080"
     volumes:
-      - ./conf/trino/catalog:/etc/trino/catalog:ro
-      - ./conf/hadoop-client:/etc/hadoop/conf:ro
+      - ./configs/trino/catalog:/etc/trino/catalog:ro
+      - ./configs/hadoop-client:/etc/hadoop/conf:ro
     depends_on:
       hive-metastore:
         condition: service_healthy
@@ -350,11 +350,11 @@ services:
       - "7077:7077"
       - "4040:4040"
     volumes:
-      - ./conf/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
-      - ./conf/hadoop-client:/opt/hadoop/etc/hadoop:ro
-      - ./jobs:/opt/spark/jobs
-      - ./data:/opt/spark/data
-      - ./jars:/opt/spark/extra-jars
+      - ./configs/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
+      - ./configs/hadoop-client:/opt/hadoop/etc/hadoop:ro
+      - ./spark/jobs:/opt/spark/jobs
+      - ./spark/data:/opt/spark/data
+      - ./etc/jars:/opt/spark/extra-jars
     command: >
       /opt/spark/bin/spark-class
       org.apache.spark.deploy.master.Master
@@ -392,11 +392,11 @@ services:
     ports:
       - "8082:8081"
     volumes:
-      - ./conf/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
-      - ./conf/hadoop-client:/opt/hadoop/etc/hadoop:ro
-      - ./jobs:/opt/spark/jobs
-      - ./data:/opt/spark/data
-      - ./jars:/opt/spark/extra-jars
+      - ./configs/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
+      - ./configs/hadoop-client:/opt/hadoop/etc/hadoop:ro
+      - ./spark/jobs:/opt/spark/jobs
+      - ./spark/data:/opt/spark/data
+      - ./etc/jars:/opt/spark/extra-jars
     command: >
       /opt/spark/bin/spark-class
       org.apache.spark.deploy.worker.Worker
@@ -631,9 +631,9 @@ services:
     volumes:
       - k3s-data:/var/lib/rancher/k3s
       - kubeconfig:/etc/rancher/k3s
-      - ./jobs:/opt/spark/jobs
-      - ./data:/opt/spark/data
-      - ./jars:/opt/spark/extra-jars
+      - ./spark/jobs:/opt/spark/jobs
+      - ./spark/data:/opt/spark/data
+      - ./etc/jars:/opt/spark/extra-jars
     ports:
       - "6443:6443"
     healthcheck:
@@ -654,7 +654,7 @@ services:
       SYNC_INTERVAL_SECONDS: "30"
     volumes:
       - kubeconfig:/etc/rancher/k3s
-      - ./k8s:/k8s
+      - ./configs/k8s:/k8s
     depends_on:
       k3s:
         condition: service_healthy

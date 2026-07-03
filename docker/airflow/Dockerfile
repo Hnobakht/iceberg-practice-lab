@@ -26,8 +26,8 @@ RUN pip install --no-cache-dir \
 ENV SPARK_HOME=/home/airflow/.local/lib/python3.11/site-packages/pyspark
 ENV PATH="${SPARK_HOME}/bin:/home/airflow/.local/bin:${PATH}"
 
-ENV HADOOP_CONF_DIR=/opt/airflow/conf/hadoop
-ENV SPARK_CONF_DIR=/opt/airflow/conf/spark
+ENV HADOOP_CONF_DIR=/opt/labs/conf/hadoop
+ENV SPARK_CONF_DIR=/opt/labs/conf/spark
 
 # ============================================================
 # First build the base image manually:
