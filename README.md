@@ -137,16 +137,16 @@ docker compose exec spark-master /opt/spark/bin/spark-sql \
     --conf spark.sql.catalog.hms.warehouse=hdfs://hdfs-namenode:9000/warehouse/iceberg \
     --conf spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions \
     -e "
-        CREATE NAMESPACE IF NOT EXISTS hms.lab;
-        CREATE TABLE IF NOT EXISTS hms.lab.test_orders (order_id BIGINT, customer_id BIGINT, amount DOUBLE, order_date DATE) USING iceberg;
-        INSERT INTO hms.lab.test_orders VALUES (1, 101, 25.50, DATE '2026-05-30'), (2, 102, 99.90, DATE '2026-05-30');
-        SELECT * FROM hms.lab.test_orders;
+        CREATE NAMESPACE IF NOT EXISTS hms.demo;
+        CREATE TABLE IF NOT EXISTS hms.demo.test_orders (order_id BIGINT, customer_id BIGINT, amount DOUBLE, order_date DATE) USING iceberg;
+        INSERT INTO hms.demo.test_orders VALUES (1, 101, 25.50, DATE '2026-05-30'), (2, 102, 99.90, DATE '2026-05-30');
+        SELECT * FROM hms.demo.test_orders;
     "
 ```
 
 **Query the same Iceberg table from Trino:**
 ```bash
-docker compose exec trino trino --execute "SELECT * FROM hms.lab.test_orders"
+docker compose exec trino trino --execute "SELECT * from hms.demo.test_orders;"
 ```
 
 ---
