@@ -10,7 +10,7 @@ SELECT_LIMIT = "50"
 DEFAULT_ARGS = {
     "owner": "airflow",
     "depends_on_past": False,
-    "start_date": datetime(2025, 1, 1),
+    "start_date": datetime(2026, 1, 1),
     "email_on_failure": False,
     "email_on_retry": False,
 }
@@ -51,10 +51,11 @@ spark_k8s_conf = {
 
     # Keep the demo small enough for your local stack.
     "spark.sql.shuffle.partitions": "4",
-    "spark.default.parallelism": "4",
     "spark.driver.memory": "1g",
+    "spark.driver.cores": "1",
     "spark.executor.memory": "1g",
     "spark.executor.cores": "1",
+    "spark.executor.instances": "1"
 }
 
 with DAG(
