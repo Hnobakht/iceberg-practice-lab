@@ -1,7 +1,6 @@
-# Iceberg Practice Lab
---------------------------------------------
+# Iceberg Practice Lab ![Version](https://img.shields.io/github/v/tag/Hnobakht/iceberg-practice-lab?label=version)
 
-This repository provides a local infrastructure to develop and practice ETL on a Big Data stack including HDFS, Hive Metastore, Iceberg, Spark, and Airflow. It also includes a K3s Kubernetes cluster to simulate Spark-on-Kubernetes deployments.
+This repository provides a local infrastructure to develop and practice ETL on a Big Data stack including HDFS, Hive Metastore, Iceberg, Spark, Trino, and Airflow. It also includes a K3s Kubernetes cluster to simulate Spark-on-Kubernetes deployments.
 
 This is a teaching and practice lab designed to give you hands-on experience with modern data engineering tools.
 
@@ -100,7 +99,6 @@ Once everything is up, you can access the following interfaces:
 - **Airflow UI:** [http://localhost:8080](http://localhost:8080) (User/Pass: `airflow` / `airflow`)
 - **Spark Master UI:** [http://localhost:8081](http://localhost:8081)
 - **Spark Worker UI:** [http://localhost:8082](http://localhost:8082)
-- **Trino UI:** [http://localhost:8083](http://localhost:8083)
 - **HDFS NameNode UI:** [http://localhost:9870](http://localhost:9870)
 
 ---
