@@ -27,7 +27,7 @@ cp .env_sample_32gb .env
 
 ## 2. Start it
 
-Follow these steps in order to bring up the stack.
+Follow these steps in order to bring up the stack step by step.
 
 ### Step A: Build the Airflow Image
 First, build the custom Airflow image that includes the necessary Spark and Kubernetes dependencies.
@@ -57,7 +57,7 @@ docker compose logs -f hdfs-init # Wait for initialization to complete
 
 # Hive Metastore
 docker compose up -d postgres-driver-downloader hive-metastore
-docker compose logs -f hive-metastore # Wait for it to start
+docker compose logs -f hive-metastore
 ```
 
 ### Step D: Query Engine & Processing (Trino & Spark)
@@ -74,8 +74,8 @@ docker compose up -d spark-master spark-worker
 Start the local K3s cluster for Spark-on-K8s simulation.
 ```bash
 docker compose up -d k3s k3s-init
-docker compose logs -f k3s-init # Wait for K3s to be ready
 ```
+note: `k3s-init` service runs every 30 seconds to keep k3s ip addresses sync with the docker-compose network.
 
 ### Step F: Orchestration (Airflow)
 Finally, start the Airflow components.
@@ -84,6 +84,13 @@ docker compose up -d airflow-init
 docker compose logs -f airflow-init # Wait for DB migrations
 
 docker compose up -d airflow-apiserver airflow-scheduler airflow-dag-processor airflow-worker airflow-triggerer
+```
+
+### All in one step: 
+Alternatively, you can start all services at the same time.
+```bash
+docker compose up -d
+watch docker compose ps # watch and wait for all services to turn healthy
 ```
 
 ## 3. Access the UIs

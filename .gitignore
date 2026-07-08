@@ -218,11 +218,12 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Development Drafts
-.back
-logs/*
+*.back
+*/logs/*
 
 # Custom ignore
 custom_ignore/*
 
 # Data
 spark/data/*
+!spark/data/note.md
