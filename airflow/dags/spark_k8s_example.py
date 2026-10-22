@@ -20,7 +20,7 @@ dag = DAG(
 spark_k8s_conf = {
     'spark.master': 'k8s://https://k3s:6443',
     'spark.submit.deployMode': 'cluster',
-    'spark.kubernetes.container.image': 'spark:3.5.8-scala2.12-java17-python3-ubuntu',
+    'spark.kubernetes.container.image': 'spark:4.1.3-scala2.13-java17-python3-ubuntu',
     'spark.kubernetes.authenticate.driver.serviceAccountName': 'spark',
     'spark.kubernetes.namespace': 'default',
 
@@ -45,7 +45,7 @@ spark_k8s_conf = {
     'spark.hadoop.hive.metastore.uris': 'thrift://hive-metastore:9083',
     'spark.sql.catalog.hms.warehouse': 'hdfs://hdfs-namenode:9000/warehouse/iceberg',
     'spark.sql.extensions': 'org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions',
-    'spark.jars': 'local:///opt/spark/extra-jars/iceberg-spark-runtime-3.5_2.12-1.6.1.jar',
+    'spark.jars': 'local:///opt/spark/extra-jars/iceberg-spark-runtime-4.1_2.13-1.12.0.jar',
 }
 
 submit_job = SparkSubmitOperator(

@@ -40,8 +40,7 @@ def split_table_identifier(table: str) -> Tuple[str, str, str]:
 
 def table_exists(spark: SparkSession, table: str) -> bool:
     catalog, namespace, table_name = split_table_identifier(table)
-    rows = spark.sql(f"SHOW TABLES IN {catalog}.{namespace} LIKE '{table_name}'").collect()
-    return any(row.tableName == table_name and not row.isTemporary for row in rows)
+    return spark.catalog.tableExists(f"{catalog}.{namespace}.{table_name}")
 
 
 def truncate_table(spark: SparkSession, table: str) -> None:

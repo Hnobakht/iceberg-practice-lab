@@ -2,7 +2,6 @@ import argparse
 from typing import Tuple
 
 from pyspark.sql import SparkSession
-from pyspark.sql.utils import AnalysisException
 
 
 def split_table_identifier(table: str) -> Tuple[str, str, str]:
@@ -17,13 +16,8 @@ def split_table_identifier(table: str) -> Tuple[str, str, str]:
 
 def table_exists(spark: SparkSession, table: str) -> bool:
     catalog, namespace, table_name = split_table_identifier(table)
-    namespace_identifier = f"{catalog}.{namespace}"
-    try:
-        rows = spark.sql(f"SHOW TABLES IN {namespace_identifier} LIKE '{table_name}'").collect()
-    except AnalysisException:
-        print(f"Namespace does not exist yet: {namespace_identifier}")
-        return False
-    return any(row.tableName == table_name and not row.isTemporary for row in rows)
+    # Unlike SHOW TABLES, this also returns False for a missing Iceberg namespace.
+    return spark.catalog.tableExists(f"{catalog}.{namespace}.{table_name}")
 
 
 def main() -> None:
