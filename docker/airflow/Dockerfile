@@ -37,7 +37,7 @@ ENV HADOOP_CONF_DIR=/opt/labs/conf/hadoop
 ENV SPARK_CONF_DIR=/opt/labs/conf/spark
 
 # Reuse this build's Spark client so Compose cannot pick up a stale base image.
-FROM base AS final
+FROM bigdata-airflow:3.2.2-spark4.1.3-python11 AS final
 
 ARG KUBECTL_VERSION=v1.32.13
 
