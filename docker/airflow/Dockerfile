@@ -6,6 +6,16 @@ ARG SPARK_VERSION=4.1.3
 
 USER root
 
+RUN set -eux; \
+    for file in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do \
+        [ -f "$file" ] || continue; \
+        sed -i \
+            -e 's|https\?://deb.debian.org/debian-security|https://mirrors.nju.edu.cn/debian-security|g' \
+            -e 's|https\?://security.debian.org/debian-security|https://mirrors.nju.edu.cn/debian-security|g' \
+            -e 's|https\?://deb.debian.org/debian|https://mirrors.nju.edu.cn/debian|g' \
+            "$file"; \
+    done
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         openjdk-17-jre-headless \
@@ -20,12 +30,16 @@ USER airflow
 
 # use airflow_constraints.txt file if githubusercontent.com is not accessible
 RUN pip install --no-cache-dir \
+    -i https://mirror.nju.edu.cn/pypi/web/simple \
+    --trusted-host mirror.nju.edu.cn \
     --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt" \
     "apache-airflow==${AIRFLOW_VERSION}" \
     apache-airflow-providers-apache-spark
 
 # Install the full Spark distribution after the constrained provider dependencies.
 RUN pip install --no-cache-dir \
+    -i https://mirror.nju.edu.cn/pypi/web/simple \
+    --trusted-host mirror.nju.edu.cn \
     "apache-airflow==${AIRFLOW_VERSION}" \
     "pyspark-client==${SPARK_VERSION}" \
     "pyspark==${SPARK_VERSION}"
@@ -43,15 +57,30 @@ ARG KUBECTL_VERSION=v1.32.13
 
 USER root
 
-# kubectl installation
-RUN apt-get update \
-    && arch=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') \
-    && curl -fsSLO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${arch}/kubectl" \
-    && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl \
-    && rm kubectl \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN set -eux; \
+    for file in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do \
+        [ -f "$file" ] || continue; \
+        sed -i \
+            -e 's|https\?://deb.debian.org/debian-security|https://mirrors.nju.edu.cn/debian-security|g' \
+            -e 's|https\?://security.debian.org/debian-security|https://mirrors.nju.edu.cn/debian-security|g' \
+            -e 's|https\?://deb.debian.org/debian|https://mirrors.nju.edu.cn/debian|g' \
+            "$file"; \
+    done
 
+# kubectl installation
+RUN apt-get update
+
+# RUN curl -fsSLO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+
+COPY kubectl kubectl
+
+RUN install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+RUN rm kubectl
+
+RUN apt-get clean 
+
+RUN rm -rf /var/lib/apt/lists/
     
 ARG BOUNCYCASTLE_VERSION=1.78.1
 RUN set -eux; \
